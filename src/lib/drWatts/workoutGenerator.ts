@@ -79,7 +79,7 @@ export function generateWorkout(decision: DecisionResult): DailyWorkout {
 
 export function generateZwo(workout: DailyWorkout): string {
     let xml = `<workout_file>\n`;
-    xml += `  <author>TCU Coach</author>\n`;
+    xml += `  <author>TCU AI教練</author>\n`;
     xml += `  <name>${workout.title}</name>\n`;
     xml += `  <description>${workout.decisionReason}</description>\n`;
     xml += `  <tags>\n    <tag name="TCUCoach"/>\n  </tags>\n`;

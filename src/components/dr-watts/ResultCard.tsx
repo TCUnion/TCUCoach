@@ -84,7 +84,7 @@ export default function ResultCard({ workout }: ResultCardProps) {
                             ))}
                         </div>
                         <p className="text-xs text-zinc-600 italic mt-4 pt-4 border-t border-zinc-800">
-                            "TCU Coach: {workout.decisionReason}"
+                            "TCU AI教練: {workout.decisionReason}"
                         </p>
                     </div>
                 )}

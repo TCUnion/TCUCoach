@@ -40,7 +40,7 @@ export default function DrWattsContainer() {
                     <Bot className="w-6 h-6 text-emerald-500" />
                 </div>
                 <div>
-                    <h2 className="text-lg font-display font-medium text-white">TCU Coach</h2>
+                    <h2 className="text-lg font-display font-medium text-white">TCU AI教練</h2>
                     <p className="text-xs text-zinc-400">Scientific Cycling Coach • v1.0</p>
                 </div>
                 <div className="ml-auto">
