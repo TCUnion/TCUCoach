@@ -1,0 +1,10 @@
+name = "tcu-coach"
+compatibility_date = "2026-01-17"
+pages_build_output_dir = "dist"
+
+[vars]
+# You can add environment variables here if needed
+NODE_VERSION = "18"
+
+[build]
+command = "npm run build"
