@@ -1,0 +1,30 @@
+name: TCU AI教練 CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build_and_check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 檢出程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 安裝相依套件
+        run: npm ci
+
+      - name: 執行 Lint 檢查
+        run: npm run lint
+
+      - name: 執行 Build 測試 (包含 TypeScript 檢查)
+        run: npm run build
