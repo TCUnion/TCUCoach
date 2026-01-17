@@ -10,7 +10,7 @@ const INITIAL_MESSAGES: ChatMessage[] = [
     {
         id: 'intro',
         role: 'assistant',
-        content: '我是 TCU 教練，您的科學化運動分析師。請上傳您最近的訓練日誌 (檔案/截圖) 或描述您目前的訓練負荷，我需要先解讀您的基礎數據 (Baseline)，才能為您規劃明天的課表。',
+        content: '我是 TCU AI教練，您的科學化運動分析師。請上傳您最近的訓練日誌 (檔案/截圖) 或描述您目前的訓練負荷，我需要先解讀您的基礎數據 (Baseline)，才能為您規劃明天的課表。',
         timestamp: Date.now(),
     }
 ];
