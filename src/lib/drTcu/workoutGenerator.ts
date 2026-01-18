@@ -59,6 +59,15 @@ export function generateWorkout(decision: DecisionResult): DailyWorkout {
 
     totalDuration = steps.reduce((acc, s) => acc + s.durationSeconds, 0);
 
+    // 根據訓練重點生成補給策略
+    const nutritionStrategy: DailyWorkout['nutritionStrategy'] = {
+        pre: '訓練前 1-2 小時攝取複合碳水化合物 (如燕麥、全麥麵包)。',
+        during: focus === 'Recovery' || focus === 'Endurance'
+            ? '每小時補充 500-750ml 水分，視情況加入電解質。'
+            : '每小時補充 60-90g 碳水化合物 (果膠/能量飲) 並保持水分攝取。',
+        post: '訓練後 30 分鐘內補充優質蛋白質與碳水化合物，促進肌肉修復。'
+    };
+
     // Simple TSS Check (Approx)
     // TSS = (sec * NP * IF) / (FTP * 3600) * 100
     // Here we approximate IF as powerPct/100
@@ -73,7 +82,8 @@ export function generateWorkout(decision: DecisionResult): DailyWorkout {
         decisionReason: decision.reason,
         steps,
         totalTss: Math.round(totalTss),
-        totalDurationSeconds: totalDuration
+        totalDurationSeconds: totalDuration,
+        nutritionStrategy
     };
 }
 

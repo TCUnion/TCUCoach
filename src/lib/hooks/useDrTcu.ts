@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { UserHardData, UserSubjectiveData, ChatMessage, DailyWorkout, DecisionResult } from '../../types/coach';
-import { decideTraining } from '../drWatts/decisionEngine';
-import { generateWorkout } from '../drWatts/workoutGenerator';
+import { decideTraining } from '../drTcu/decisionEngine';
+import { generateWorkout } from '../drTcu/workoutGenerator';
 
 export type FlowState = 'INGESTION' | 'DIAGNOSTIC' | 'PRESCRIPTION';
 
@@ -15,7 +15,7 @@ const INITIAL_MESSAGES: ChatMessage[] = [
     }
 ];
 
-export function useDrWatts() {
+export function useDrTcu() {
     const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
     const [flowState, setFlowState] = useState<FlowState>('INGESTION');
     const [hardData, setHardData] = useState<UserHardData | null>(null);

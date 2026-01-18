@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { DailyWorkout } from '../../types/coach';
-import { generateZwo } from '../../lib/drWatts/workoutGenerator';
-import { formatDuration } from '../../lib/drWatts/powerZones';
+import { generateZwo } from '../../lib/drTcu/workoutGenerator';
+import { formatDuration } from '../../lib/drTcu/powerZones';
 import { FileCode, List, Bike, Copy, Check } from 'lucide-react';
 
 interface ResultCardProps {
@@ -83,6 +83,30 @@ export default function ResultCard({ workout }: ResultCardProps) {
                                 </div>
                             ))}
                         </div>
+                        {/* 補給策略區塊 */}
+                        {workout.nutritionStrategy && (
+                            <div className="mt-6 pt-6 border-t border-zinc-800 space-y-4">
+                                <h4 className="text-xs font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-1 h-3 bg-emerald-500 rounded-full" />
+                                    推薦補給策略
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div className="bg-zinc-900/80 p-3 rounded-lg border border-zinc-800/50">
+                                        <div className="text-[10px] text-zinc-500 uppercase mb-1 font-bold">Pre 訓練前</div>
+                                        <div className="text-xs text-zinc-300 leading-relaxed">{workout.nutritionStrategy.pre}</div>
+                                    </div>
+                                    <div className="bg-zinc-900/80 p-3 rounded-lg border border-zinc-800/50">
+                                        <div className="text-[10px] text-zinc-500 uppercase mb-1 font-bold">During 訓練中</div>
+                                        <div className="text-xs text-zinc-300 leading-relaxed">{workout.nutritionStrategy.during}</div>
+                                    </div>
+                                    <div className="bg-zinc-900/80 p-3 rounded-lg border border-zinc-800/50">
+                                        <div className="text-[10px] text-zinc-500 uppercase mb-1 font-bold">Post 訓練後</div>
+                                        <div className="text-xs text-zinc-300 leading-relaxed">{workout.nutritionStrategy.post}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <p className="text-xs text-zinc-600 italic mt-4 pt-4 border-t border-zinc-800">
                             "TCU AI教練: {workout.decisionReason}"
                         </p>

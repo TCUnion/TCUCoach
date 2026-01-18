@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { useDrWatts } from '../../lib/hooks/useDrWatts';
+import { useDrTcu } from '../../lib/hooks/useDrTcu';
 import { ChatMessage, DailyWorkout, UserSubjectiveData } from '../../types/coach';
 import { Send, User, Bot } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -8,8 +8,8 @@ import DiagnosticForm from './DiagnosticForm';
 import ResultCard from './ResultCard';
 import StravaConnect from './StravaConnect';
 
-export default function DrWattsContainer() {
-    const { messages, flowState, handleIngestion, handleDiagnostic, workout } = useDrWatts();
+export default function DrTcuContainer() {
+    const { messages, flowState, handleIngestion, handleDiagnostic, workout } = useDrTcu();
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 

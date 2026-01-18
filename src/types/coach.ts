@@ -37,6 +37,11 @@ export interface DailyWorkout {
     steps: WorkoutStep[];
     totalTss: number;
     totalDurationSeconds: number;
+    nutritionStrategy?: {
+        pre: string;
+        during: string;
+        post: string;
+    };
 }
 
 export interface ChatMessage {

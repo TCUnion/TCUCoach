@@ -1,5 +1,5 @@
-import DrWattsContainer from './components/dr-watts/DrWattsContainer';
-import StravaSuccess from './components/dr-watts/StravaSuccess';
+import DrTcuContainer from './components/dr-tcu/DrTcuContainer';
+import StravaSuccess from './components/dr-tcu/StravaSuccess';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import { useEffect } from 'react';
@@ -21,7 +21,7 @@ function App() {
         <BrowserRouter>
             <div className="min-h-screen bg-neutral-950 text-white font-sans flex flex-col items-center justify-center p-4">
                 <Routes>
-                    <Route path="/" element={<DrWattsContainer />} />
+                    <Route path="/" element={<DrTcuContainer />} />
                     <Route path="/strava-success" element={<StravaSuccess />} />
                 </Routes>
             </div>
