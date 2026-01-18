@@ -3,6 +3,7 @@ import { supabase } from '../supabase';
 import { UserHardData, UserSubjectiveData, ChatMessage, DailyWorkout, DecisionResult } from '../../types/coach';
 import { decideTraining } from '../drTcu/decisionEngine';
 import { generateWorkout } from '../drTcu/workoutGenerator';
+import { analyzeStreams, getZoneDistribution, StravaStream } from '../drTcu/streamAnalyzer';
 
 export type FlowState = 'INGESTION' | 'DIAGNOSTIC' | 'PRESCRIPTION';
 
@@ -121,6 +122,59 @@ export function useDrTcu() {
 
                         setHardData(newData);
 
+                        // 4.1 抓取並分析 Strava Streams (時序數據)
+                        let streamMessage = '';
+                        try {
+                            // 先從 Supabase 抓取
+                            let { data: streamData } = await supabase
+                                .from('strava_streams')
+                                .select('streams')
+                                .eq('activity_id', lastActivity.id)
+                                .maybeSingle();
+
+                            if (!streamData && hasToken) {
+                                // 若 Supabase 沒有，嘗試從 Strava API 抓取並同步 (Fallback 邏輯)
+                                const token = localStorage.getItem('strava_access_token');
+                                const response = await fetch(`https://www.strava.com/api/v3/activities/${lastActivity.id}/streams?keys=time,distance,latlng,altitude,velocity_smooth,heartrate,cadence,watts,temp,moving,grade_smooth&key_by_type=true`, {
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                });
+
+                                if (response.ok) {
+                                    const rawStreams = await response.json();
+                                    // 轉換為陣列格式儲存
+                                    const streamsArray = Object.keys(rawStreams).map(key => ({
+                                        type: key,
+                                        ...rawStreams[key]
+                                    }));
+
+                                    await supabase.from('strava_streams').upsert({
+                                        activity_id: lastActivity.id,
+                                        streams: streamsArray
+                                    });
+                                    streamData = { streams: streamsArray };
+                                }
+                            }
+
+                            if (streamData) {
+                                const analysis = analyzeStreams(streamData.streams as StravaStream[], ftp);
+                                const distribution = getZoneDistribution(analysis);
+                                if (analysis.hasPower) {
+                                    streamMessage = `\n\n#### **強度分佈 (Power Profile)**\n`;
+                                    streamMessage += `根據秒級數據分析，您的功率分佈如下：\n`;
+                                    streamMessage += `| 區間 | 比例 | 狀態 |\n| :--- | :--- | :--- |\n`;
+                                    streamMessage += `| Zone 1-2 | ${distribution[1] + distribution[2]}% | 基礎有氧 |\n`;
+                                    streamMessage += `| Zone 3-4 | ${distribution[3] + distribution[4]}% | 訓練負擔 |\n`;
+                                    streamMessage += `| Zone 5-6 | ${distribution[5] + distribution[6]}% | 高強度無氧 |\n`;
+
+                                    if (analysis.maxWatts > ftp * 1.5) {
+                                        streamMessage += `\n*備註：偵測到多處高功率衝刺 (${analysis.maxWatts}W)，這會加速神經疲勞。*`;
+                                    }
+                                }
+                            }
+                        } catch (streamErr) {
+                            console.error('Stream sync/analysis failed:', streamErr);
+                        }
+
                         // 4. 組合更詳細的運動狀態通知 (表格化)
                         let statusMsg = `![Strava](/strava-logo.png)\n\n### **運動數據同步成功！**\n\n`;
                         statusMsg += `| 項目 | 詳細資訊 |\n`;
@@ -133,6 +187,9 @@ export function useDrTcu() {
                             statusMsg += `| **環境溫度** | ${lastActivity.average_temp}°C |\n`;
                         }
                         statusMsg += `| **預估負擔** | TSS ${tss} (IF: ${newData.yesterdayIf}) |\n`;
+
+                        // 附加 Stream 分析訊息
+                        statusMsg += streamMessage;
 
                         addMessage('assistant', statusMsg);
 
