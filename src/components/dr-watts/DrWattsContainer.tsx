@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { useDrWatts } from '../../lib/hooks/useDrWatts';
-import { ChatMessage } from '../../types/coach';
+import { ChatMessage, DailyWorkout, UserSubjectiveData } from '../../types/coach';
 import { Send, User, Bot } from 'lucide-react';
 import DiagnosticForm from './DiagnosticForm';
 import ResultCard from './ResultCard';
@@ -86,7 +86,7 @@ export default function DrWattsContainer() {
     );
 }
 
-function MessageItem({ message, onFormSubmit, workout }: { message: ChatMessage, onFormSubmit: any, workout: any }) {
+function MessageItem({ message, onFormSubmit, workout }: { message: ChatMessage, onFormSubmit: (data: UserSubjectiveData) => void, workout: DailyWorkout | null }) {
     const isBot = message.role === 'assistant';
 
     return (

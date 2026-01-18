@@ -74,9 +74,13 @@ export function useStravaProfile() {
                 localStorage.setItem('strava_athlete', JSON.stringify(data)); // Cache it
                 setProfile(data);
                 setError(null);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Failed to fetch Strava profile:", err);
-                setError(err.message);
+                if (err instanceof Error) {
+                    setError(err.message);
+                } else {
+                    setError(String(err));
+                }
                 // setProfile(null); // Keep null
             } finally {
                 setLoading(false);
