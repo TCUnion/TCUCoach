@@ -18,10 +18,33 @@ export function useStravaActivities() {
 
     useEffect(() => {
         const fetchActivities = async () => {
+            // Get Athlete ID from LocalStorage (fastest access without hook overhead if just needed for ID)
+            const storedAthlete = localStorage.getItem('strava_athlete');
+            if (!storedAthlete) {
+                setLoading(false);
+                return;
+            }
+
+            let athleteId: number | undefined;
             try {
+                athleteId = JSON.parse(storedAthlete).id;
+            } catch (e) {
+                console.error("Failed to parse athlete ID");
+            }
+
+            if (!athleteId) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                // Query strava_activities filtering by athlete_id_int (BigInt in DB) or athlete_id (Text)
+                // We'll try athlete_id (Text) first as it is more common, but DB has both.
+                // Based on schema, athlete_id is text.
                 const { data, error } = await supabase
                     .from('strava_activities')
                     .select('id, name, start_date_local, distance, moving_time, total_elevation_gain, average_watts')
+                    .eq('athlete_id', athleteId.toString())
                     .order('start_date_local', { ascending: false })
                     .limit(10);
 
@@ -36,6 +59,11 @@ export function useStravaActivities() {
         };
 
         fetchActivities();
+
+        // Listen for token updates to refetch
+        const handleUpdate = () => fetchActivities();
+        window.addEventListener('strava-token-update', handleUpdate);
+        return () => window.removeEventListener('strava-token-update', handleUpdate);
     }, []);
 
     return { activities, loading, error };

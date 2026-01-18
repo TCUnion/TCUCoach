@@ -81,11 +81,30 @@ export function useDrTcu() {
                     // Let's assume for this "TCUnion/race" integration, we are sharing the same database.
 
                     // 1. 從新的 strava_activities 資料表抓取最新活動
-                    const { data: latestActivities, error } = await supabase
+                    // 必須先從 LocalStorage 取得當前使用者的 Strava ID
+                    const storedAthlete = localStorage.getItem('strava_athlete');
+                    let athleteId: number | undefined;
+                    if (storedAthlete) {
+                        try {
+                            athleteId = JSON.parse(storedAthlete).id;
+                        } catch (e) {
+                            console.error("Failed to parse athlete ID");
+                        }
+                    }
+
+                    // 建構查詢
+                    let query = supabase
                         .from('strava_activities')
                         .select('*')
                         .order('start_date', { ascending: false })
                         .limit(1);
+
+                    // 若有 ID 則進行過濾，確保只看到自己的數據
+                    if (athleteId) {
+                        query = query.eq('athlete_id', athleteId.toString());
+                    }
+
+                    const { data: latestActivities, error } = await query;
 
                     if (error) throw error;
 
