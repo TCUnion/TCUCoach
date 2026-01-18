@@ -43,9 +43,10 @@ export function useStravaStreams(activityId: number | string | null): UseStravaS
                 } else {
                     setStreams(null);
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Error fetching Strava Streams:", err);
-                setError(err.message || 'Failed to load stream data');
+                const errorMessage = err instanceof Error ? err.message : 'Failed to load stream data';
+                setError(errorMessage);
             } finally {
                 setLoading(false);
             }

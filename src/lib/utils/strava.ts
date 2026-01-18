@@ -25,7 +25,7 @@ export interface ActivityDataPoint {
 export function transformStreamsToDataPoints(streams: StravaStream[]): ActivityDataPoint[] {
     // 1. Find the 'time' stream to serve as the master index
     const timeStream = streams.find(s => s.type === 'time');
-    const distanceStream = streams.find(s => s.type === 'distance');
+
 
     if (!timeStream || !timeStream.data) {
         console.warn("Strava Streams missing 'time' data");
@@ -37,7 +37,7 @@ export function transformStreamsToDataPoints(streams: StravaStream[]): ActivityD
 
     // Helper to get data by type for quick lookup inside the loop
     // We filter out time/distance as we handle them locally, but actually looking them up is fine
-    const streamMap = new Map<string, number[] | any[]>();
+    const streamMap = new Map<string, number[] | boolean[] | [number, number][]>();
     streams.forEach(s => {
         if (s.data) streamMap.set(s.type, s.data);
     });

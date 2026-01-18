@@ -120,10 +120,10 @@ function MessageItem({ message, onFormSubmit, workout }: { message: ChatMessage,
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={{
-                                    table: ({ node, ...props }) => <table className="border-collapse border border-zinc-700 my-2 w-full" {...props} />,
-                                    th: ({ node, ...props }) => <th className="border border-zinc-700 px-3 py-1 bg-zinc-900 font-bold" {...props} />,
-                                    td: ({ node, ...props }) => <td className="border border-zinc-700 px-3 py-1" {...props} />,
-                                    img: ({ node, ...props }) => <img className="max-h-12 object-contain my-2" {...props} />,
+                                    table: ({ ...props }) => <table className="border-collapse border border-zinc-700 my-2 w-full" {...props} />,
+                                    th: ({ ...props }) => <th className="border border-zinc-700 px-3 py-1 bg-zinc-900 font-bold" {...props} />,
+                                    td: ({ ...props }) => <td className="border border-zinc-700 px-3 py-1" {...props} />,
+                                    img: ({ ...props }) => <img className="max-h-12 object-contain my-2" {...props} />,
                                 }}
                             >
                                 {message.content}

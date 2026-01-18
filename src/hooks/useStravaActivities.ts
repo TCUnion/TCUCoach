@@ -27,9 +27,9 @@ export function useStravaActivities() {
 
                 if (error) throw error;
                 setActivities(data || []);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error('Error fetching activities:', err);
-                setError(err.message);
+                setError(err instanceof Error ? err.message : 'Unknown error');
             } finally {
                 setLoading(false);
             }
