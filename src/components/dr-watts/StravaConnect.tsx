@@ -1,8 +1,35 @@
 import { Share2 } from 'lucide-react';
+import { useEffect } from 'react';
 import { useStravaProfile } from '../../lib/hooks/useStravaProfile';
 
 export default function StravaConnect() {
     const { profile, loading, hasToken } = useStravaProfile();
+
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            // 安全檢查：確認訊息來源（如果需要的話，這裡可以加上對 n8n 網域的檢查）
+            // if (event.origin !== 'https://n8n.criterium.tw') return;
+
+            if (event.data?.type === 'STRAVA_AUTH_SUCCESS') {
+                const { athlete } = event.data;
+                console.log('收到 Strava 授權成功訊息:', athlete);
+
+                // 儲存 Token 資訊
+                if (athlete.access_token) localStorage.setItem('strava_access_token', athlete.access_token);
+                if (athlete.refresh_token) localStorage.setItem('strava_refresh_token', athlete.refresh_token);
+                if (athlete.expires_at) localStorage.setItem('strava_expires_at', athlete.expires_at.toString());
+
+                // 儲存個人資料 (Cache)
+                localStorage.setItem('strava_athlete', JSON.stringify(athlete));
+
+                // 觸發自訂事件，讓 useStravaProfile Hook 感知到變更
+                window.dispatchEvent(new CustomEvent('strava-token-update'));
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, []);
 
     const handleConnect = () => {
         // Open n8n backend auth endpoint in a popup
