@@ -177,7 +177,7 @@ function ManualSyncSection() {
                 >
                     <option value="">{loading ? "載入中..." : "選擇最近活動..."}</option>
                     {activities.map(act => (
-                        <option key={act.id} value={act.id}>
+                        <option key={act.id} value={act.activity_id}>
                             {new Date(act.start_date_local).toLocaleDateString()} - {act.name}
                         </option>
                     ))}
