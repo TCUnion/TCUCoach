@@ -1,4 +1,5 @@
 import DrTcuContainer from './components/dr-tcu/DrTcuContainer';
+import ActivityAnalysis from './components/dr-tcu/ActivityAnalysis';
 import StravaSuccess from './components/dr-tcu/StravaSuccess';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
@@ -22,6 +23,7 @@ function App() {
             <div className="min-h-screen bg-neutral-950 text-white font-sans flex flex-col items-center justify-center p-4">
                 <Routes>
                     <Route path="/" element={<DrTcuContainer />} />
+                    <Route path="/analysis" element={<ActivityAnalysis />} />
                     <Route path="/strava-success" element={<StravaSuccess />} />
                 </Routes>
             </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserSubjectiveData } from '../../types/coach';
+import { useStravaActivities } from '../../hooks/useStravaActivities';
 
 interface DiagnosticFormProps {
     onSubmit: (data: UserSubjectiveData) => void;
@@ -119,6 +120,85 @@ export default function DiagnosticForm({ onSubmit }: DiagnosticFormProps) {
             >
                 提交狀態
             </button>
+            <ManualSyncSection />
         </form>
+    );
+}
+
+function ManualSyncSection() {
+    const [activityId, setActivityId] = useState('');
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const { activities, loading } = useStravaActivities();
+
+    const handleSync = async () => {
+        if (!activityId) return;
+        setStatus('loading');
+        try {
+            // 從 localStorage 取得 athlete (owner_id)
+            const athleteStr = localStorage.getItem('strava_athlete');
+            const ownerId = athleteStr ? JSON.parse(athleteStr).id : 96603889; // Fallback to provided owner_id if missing
+
+            const payload = {
+                aspect_type: "create",
+                event_time: Math.floor(Date.now() / 1000),
+                object_id: Number(activityId),
+                object_type: "activity",
+                owner_id: ownerId,
+                subscription_id: 123456, // Dummy ID
+                updates: {}
+            };
+
+            await fetch('https://n8n.criterium.tw/webhook/strava-activity-webhook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            setStatus('success');
+            setTimeout(() => setStatus('idle'), 3000);
+            setActivityId('');
+        } catch (err) {
+            console.error(err);
+            setStatus('error');
+            setTimeout(() => setStatus('idle'), 3000);
+            alert('手動同步觸發失敗，請檢查網路或 Console 錯誤訊息');
+        }
+    };
+
+    return (
+        <div className="pt-6 mt-6 border-t border-zinc-800">
+            <h4 className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-3">手動同步 Strava 活動</h4>
+            <div className="flex flex-col gap-2">
+                <select
+                    value={activityId}
+                    onChange={(e) => setActivityId(e.target.value)}
+                    disabled={loading}
+                    className="w-full bg-black/30 border border-zinc-700 rounded text-sm px-3 py-2 text-zinc-300 focus:border-emerald-500 focus:outline-none appearance-none truncate"
+                >
+                    <option value="">{loading ? "載入中..." : "選擇最近活動..."}</option>
+                    {activities.map(act => (
+                        <option key={act.id} value={act.id}>
+                            {new Date(act.start_date_local).toLocaleDateString()} - {act.name}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    type="button"
+                    onClick={handleSync}
+                    disabled={!activityId || status === 'loading'}
+                    className={`w-full px-3 py-2 rounded text-sm font-medium transition-colors ${status === 'success' ? 'bg-green-500/20 text-green-400 border border-green-500/50' :
+                        status === 'error' ? 'bg-red-500/20 text-red-400 border border-red-500/50' :
+                            'bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700 hover:bg-zinc-700'
+                        }`}
+                >
+                    {status === 'loading' ? '處理中...' :
+                        status === 'success' ? '已發送同步請求' :
+                            status === 'error' ? '請求失敗' : '同步所選活動'}
+                </button>
+            </div>
+            <p className="text-[10px] text-zinc-600 mt-2">
+                * 若數據未更新，請選擇活動並點擊同步以觸發重新分析。
+            </p>
+        </div>
     );
 }

@@ -1,7 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import { useRef, useEffect, useState } from 'react';
 import { useDrTcu } from '../../lib/hooks/useDrTcu';
 import { ChatMessage, DailyWorkout, UserSubjectiveData } from '../../types/coach';
-import { Send, User, Bot } from 'lucide-react';
+import { Send, User, Bot, TrendingUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import DiagnosticForm from './DiagnosticForm';
@@ -12,6 +13,7 @@ export default function DrTcuContainer() {
     const { messages, flowState, handleIngestion, handleDiagnostic, workout } = useDrTcu();
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -45,7 +47,15 @@ export default function DrTcuContainer() {
                     <h2 className="text-lg font-display font-medium text-white">TCU AI教練</h2>
                     <p className="text-xs text-zinc-400">Scientific Cycling Coach • v1.0</p>
                 </div>
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center gap-2">
+                    <button
+                        onClick={() => navigate('/analysis')}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-xs border border-zinc-700"
+                        title="查看活動分析"
+                    >
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">活動分析</span>
+                    </button>
                     <StravaConnect />
                 </div>
             </div>
