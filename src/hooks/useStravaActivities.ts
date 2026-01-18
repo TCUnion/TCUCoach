@@ -29,7 +29,7 @@ export function useStravaActivities() {
             let athleteId: number | undefined;
             try {
                 athleteId = JSON.parse(storedAthlete).id;
-            } catch (e) {
+            } catch {
                 console.error("Failed to parse athlete ID");
             }
 

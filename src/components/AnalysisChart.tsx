@@ -14,6 +14,19 @@ import {
 import { useStravaStreams } from '../hooks/useStravaStreams';
 import { transformStreamsToDataPoints } from '../lib/utils/strava';
 
+interface TooltipPayloadItem {
+    dataKey: string;
+    value: number | string;
+    color: string;
+    name: string;
+}
+
+interface CustomTooltipProps {
+    active?: boolean;
+    payload?: TooltipPayloadItem[];
+    label?: number;
+}
+
 interface AnalysisChartProps {
     activityId: number | string | null;
 }
@@ -62,12 +75,12 @@ const AnalysisChart: React.FC<AnalysisChartProps> = ({ activityId }) => {
     /**
      * 自定義 Tooltip 內容
      */
-    const CustomTooltip = ({ active, payload, label }: any) => {
+    const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
         if (active && payload && payload.length) {
             return (
                 <div className="bg-white/90 p-3 border border-gray-200 shadow-lg rounded text-sm font-mono">
-                    <p className="font-bold text-gray-700 mb-1">{formatXAxis(label)}</p>
-                    {payload.map((p: any) => (
+                    <p className="font-bold text-gray-700 mb-1">{formatXAxis(label || 0)}</p>
+                    {payload.map((p: TooltipPayloadItem) => (
                         <div key={p.dataKey} className="flex items-center gap-2" style={{ color: p.color }}>
                             <span className="w-20 font-semibold text-xs uppercase">{translateKey(p.dataKey)}:</span>
                             <span className="font-bold">

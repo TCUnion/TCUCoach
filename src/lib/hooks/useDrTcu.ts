@@ -87,7 +87,7 @@ export function useDrTcu() {
                     if (storedAthlete) {
                         try {
                             athleteId = JSON.parse(storedAthlete).id;
-                        } catch (e) {
+                        } catch {
                             console.error("Failed to parse athlete ID");
                         }
                     }
