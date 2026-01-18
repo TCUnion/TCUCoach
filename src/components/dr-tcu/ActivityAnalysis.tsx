@@ -6,12 +6,12 @@ import { useNavigate } from 'react-router-dom';
 
 export default function ActivityAnalysis() {
     const { activities, loading, error } = useStravaActivities();
-    const [selectedActivityId, setSelectedActivityId] = useState<number | null>(null);
+    const [selectedActivityId, setSelectedActivityId] = useState<string | number | null>(null);
     const navigate = useNavigate();
 
     // Auto-select the first activity when loaded
     if (!selectedActivityId && activities.length > 0) {
-        setSelectedActivityId(activities[0].id);
+        setSelectedActivityId(activities[0].activity_id);
     }
 
     const formatDistance = (m: number) => (m / 1000).toFixed(1) + ' km';
@@ -53,14 +53,14 @@ export default function ActivityAnalysis() {
                         {!loading && activities.map(activity => (
                             <button
                                 key={activity.id}
-                                onClick={() => setSelectedActivityId(activity.id)}
-                                className={`w-full text-left p-3 rounded-xl border transition-all group ${selectedActivityId === activity.id
+                                onClick={() => setSelectedActivityId(activity.activity_id)}
+                                className={`w-full text-left p-3 rounded-xl border transition-all group ${selectedActivityId === activity.activity_id
                                     ? 'bg-orange-500/10 border-orange-500/50 shadow-inner'
                                     : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800'
                                     }`}
                             >
                                 <div className="mb-2">
-                                    <h4 className={`font-medium truncate ${selectedActivityId === activity.id ? 'text-orange-400' : 'text-zinc-300 group-hover:text-white'
+                                    <h4 className={`font-medium truncate ${selectedActivityId === activity.activity_id ? 'text-orange-400' : 'text-zinc-300 group-hover:text-white'
                                         }`}>
                                         {activity.name}
                                     </h4>
@@ -90,7 +90,7 @@ export default function ActivityAnalysis() {
                         <div className="max-w-4xl mx-auto space-y-6">
                             <div className="flex items-baseline justify-between">
                                 <h3 className="text-2xl font-bold text-white">
-                                    {activities.find(a => a.id === selectedActivityId)?.name}
+                                    {activities.find(a => a.activity_id === selectedActivityId)?.name}
                                 </h3>
                                 <div className="text-zinc-500 font-mono text-sm">
                                     ID: {selectedActivityId}

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 
 export interface StravaActivitySummary {
     id: number;
+    activity_id: string; // Strava ID (Text in DB)
     name: string;
     start_date_local: string;
     distance: number;
@@ -43,7 +44,7 @@ export function useStravaActivities() {
                 // Based on schema, athlete_id is text.
                 const { data, error } = await supabase
                     .from('strava_activities')
-                    .select('id, name, start_date_local, distance, moving_time, total_elevation_gain, average_watts')
+                    .select('id, activity_id, name, start_date_local, distance, moving_time, total_elevation_gain, average_watts')
                     .eq('athlete_id', athleteId.toString())
                     .order('start_date_local', { ascending: false })
                     .limit(10);
