@@ -33,7 +33,10 @@ export default function DiagnosticForm({ onSubmit }: DiagnosticFormProps) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="bg-zinc-900 border border-zinc-700 rounded-lg p-5 space-y-6 w-full max-w-sm animate-in zoom-in-95 duration-300">
+        <form
+            onSubmit={handleSubmit}
+            className="bg-zinc-900 border border-zinc-700 rounded-lg p-5 space-y-6 w-full max-w-sm animate-in zoom-in-95 duration-300 max-h-[400px] overflow-y-auto scrollbar-hide"
+        >
             <h3 className="text-zinc-200 font-medium border-b border-zinc-800 pb-2">今日體感回報</h3>
 
             {/* RPE Slider */}

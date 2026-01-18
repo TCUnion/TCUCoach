@@ -2,6 +2,8 @@ import { useRef, useEffect, useState } from 'react';
 import { useDrWatts } from '../../lib/hooks/useDrWatts';
 import { ChatMessage, DailyWorkout, UserSubjectiveData } from '../../types/coach';
 import { Send, User, Bot } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import DiagnosticForm from './DiagnosticForm';
 import ResultCard from './ResultCard';
 import StravaConnect from './StravaConnect';
@@ -101,10 +103,24 @@ function MessageItem({ message, onFormSubmit, workout }: { message: ChatMessage,
                 {/* Content */}
                 <div className={`flex flex-col space-y-2 ${isBot ? 'items-start' : 'items-end'}`}>
                     <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${isBot
-                        ? 'bg-zinc-800 text-zinc-200 rounded-tl-none border border-zinc-700/50'
+                        ? 'bg-zinc-800 text-zinc-200 rounded-tl-none border border-zinc-700/50 prose prose-invert prose-sm max-w-none'
                         : 'bg-emerald-600 text-white rounded-tr-none'
                         }`}>
-                        {message.content}
+                        {isBot ? (
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                    table: ({ node, ...props }) => <table className="border-collapse border border-zinc-700 my-2 w-full" {...props} />,
+                                    th: ({ node, ...props }) => <th className="border border-zinc-700 px-3 py-1 bg-zinc-900 font-bold" {...props} />,
+                                    td: ({ node, ...props }) => <td className="border border-zinc-700 px-3 py-1" {...props} />,
+                                    img: ({ node, ...props }) => <img className="max-h-12 object-contain my-2" {...props} />,
+                                }}
+                            >
+                                {message.content}
+                            </ReactMarkdown>
+                        ) : (
+                            message.content
+                        )}
                     </div>
 
                     {/* Special Content: Form */}

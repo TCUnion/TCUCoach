@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { UserHardData, UserSubjectiveData, ChatMessage, DailyWorkout, DecisionResult } from '../../types/coach';
 import { decideTraining } from '../drWatts/decisionEngine';
@@ -10,7 +10,7 @@ const INITIAL_MESSAGES: ChatMessage[] = [
     {
         id: 'intro',
         role: 'assistant',
-        content: '我是 TCU AI教練，您的科學化運動分析師。請上傳您最近的訓練日誌 (檔案/截圖) 或描述您目前的訓練負荷，我需要先解讀您的基礎數據 (Baseline)，才能為您規劃明天的課表。',
+        content: '我是 TCU AI教練，您的科學化運動分析師。請同步您最近的訓練日誌。',
         timestamp: Date.now(),
     }
 ];
@@ -51,13 +51,17 @@ export function useDrWatts() {
         };
     }, []);
 
+    // 宣告一個 ref 來防止重複抓取 (尤其是在 React 18 Strict Mode 下)
+    const isFetchingRef = useRef(false);
+
     // Check for Strava Token and Fetch Data
     useEffect(() => {
-        if (hasToken && flowState === 'INGESTION' && !hardData) {
+        if (hasToken && flowState === 'INGESTION' && !hardData && !isFetchingRef.current) {
 
             const fetchData = async () => {
+                isFetchingRef.current = true;
                 try {
-                    addMessage('assistant', '偵測到 Strava連結，正在同步最近活動數據...', 'text');
+                    addMessage('assistant', '偵測到 Strava 連結，正在同步最近活動數據...', 'text');
 
                     // 1. Get Strava Athlete ID first
                     // In a real app we might store this in local storage too, but let's query profiles to be sure or just assume we have it.
@@ -75,55 +79,70 @@ export function useDrWatts() {
                     // unless we call Strava API via the n8n proxy or directly if Scope allows.
                     // Let's assume for this "TCUnion/race" integration, we are sharing the same database.
 
-                    // Simple approach: Fetch the most recent segment effort added to Supabase.
-                    const { data: latestEfforts, error } = await supabase
-                        .from('segment_efforts')
+                    // 1. 從新的 strava_activities 資料表抓取最新活動
+                    const { data: latestActivities, error } = await supabase
+                        .from('strava_activities')
                         .select('*')
                         .order('start_date', { ascending: false })
                         .limit(1);
 
                     if (error) throw error;
 
-                    if (latestEfforts && latestEfforts.length > 0) {
-                        const lastActivity = latestEfforts[0];
+                    if (latestActivities && latestActivities.length > 0) {
+                        const lastActivity = latestActivities[0];
 
-                        // Map Supabase data to our HardData model
-                        // TSS is not standard in segment_efforts, usually it's in detailed activity.
-                        // We will estimate TSS like before if missing, or use power data.
+                        // 2. 獲取單車名稱 (如果要顯示使用的車子)
+                        let bikeName = '未知單車';
+                        if (lastActivity.gear_id) {
+                            const { data: bikeData } = await supabase
+                                .from('bikes')
+                                .select('name')
+                                .eq('id', lastActivity.gear_id)
+                                .maybeSingle();
+                            if (bikeData) bikeName = bikeData.name;
+                        }
 
-                        // If average_watts is present
-                        const avgWatts = lastActivity.average_watts || 150;
-                        const ftp = 250; // Default FTP
-                        const intensityFactor = avgWatts / ftp;
+                        // 3. 計算 TSS 與強度 (IF)
+                        // 優先使用加權平均功率 (Weighted Average Watts)，若無則用平均功率
+                        const power = lastActivity.weighted_average_watts || lastActivity.average_watts || 150;
+                        const ftp = 250; // 預設值，未來可從 user profile 抓取
+                        const intensityFactor = power / ftp;
 
-                        // Estimate TSS: (sec * NP * IF) / (FTP * 3600) * 100
-                        // simplified: (moving_time * avgWatts * IF) ... roughly.
-                        // Let's use the simple IF we calculated.
-                        const movingTime = lastActivity.elapsed_time || 3600;
-                        const tss = Math.round((movingTime * avgWatts * intensityFactor) / (ftp * 3600) * 100);
+                        // TSS 公式: (sec * power * IF) / (FTP * 3600) * 100
+                        const movingTime = lastActivity.moving_time || 3600;
+                        const tss = Math.round((movingTime * power * intensityFactor) / (ftp * 3600) * 100);
 
                         const newData: UserHardData = {
                             ftp,
                             yesterdayTss: tss,
                             yesterdayIf: Number(intensityFactor.toFixed(2)),
-                            tsb: -15 // Mock TSB
+                            tsb: -15 // 模擬 TSB 疲勞值
                         };
 
                         setHardData(newData);
-                        addMessage('assistant', `Strava 同步完成 (via Supabase)！
-                        \n最近活動: "${lastActivity.segment_name || '未知路段'}"
-                        \n功率: ${Math.round(avgWatts)}W
-                        \n心率: ${Math.round(lastActivity.average_heartrate || 0)}bpm
-                        \n預估 TSS: ${tss} (IF: ${newData.yesterdayIf})`);
+
+                        // 4. 組合更詳細的運動狀態通知 (表格化)
+                        let statusMsg = `![Strava](/strava-logo.png)\n\n### **運動數據同步成功！**\n\n`;
+                        statusMsg += `| 項目 | 詳細資訊 |\n`;
+                        statusMsg += `| :--- | :--- |\n`;
+                        statusMsg += `| **運動名稱** | ${lastActivity.name || '未命名活動'} |\n`;
+                        statusMsg += `| **使用的車子** | ${bikeName} |\n`;
+                        statusMsg += `| **使用設備** | ${lastActivity.device_name || '未知設備'} |\n`;
+                        statusMsg += `| **運動數據** | ${Math.round(power)}W / ${Math.round(lastActivity.average_heartrate || 0)}bpm |\n`;
+                        if (lastActivity.average_temp) {
+                            statusMsg += `| **環境溫度** | ${lastActivity.average_temp}°C |\n`;
+                        }
+                        statusMsg += `| **預估負擔** | TSS ${tss} (IF: ${newData.yesterdayIf}) |\n`;
+
+                        addMessage('assistant', statusMsg);
 
                         setTimeout(() => {
-                            addMessage('assistant', '數據顯示疲勞累積。請回報今日狀態以調整明日課表。', 'form');
+                            addMessage('assistant', '根據數據顯示，您昨天的訓練負荷較高。請回報目前的「自覺體感」，讓我為您微調明天的課表。', 'form');
                             setFlowState('DIAGNOSTIC');
                         }, 1000);
 
                     } else {
-                        addMessage('assistant', '資料庫中未發現近期活動紀錄。');
-                        // Reset token if invalid? No, just no data found.
+                        addMessage('assistant', '資料庫中尚未發現您的活動紀錄，請確認您已在 Strava 上傳活動。');
                     }
 
                 } catch (e) {
