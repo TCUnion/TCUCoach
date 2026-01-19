@@ -8,6 +8,7 @@ export interface StravaProfile {
     lastname: string;
     profile: string; // url 124px
     profile_medium: string; // url 64px
+    ftp?: number; // Functional Threshold Power
 }
 
 export function useStravaProfile() {

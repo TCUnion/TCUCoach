@@ -7,10 +7,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import DiagnosticForm from './DiagnosticForm';
 import ResultCard from './ResultCard';
-import StravaConnect from './StravaConnect';
+import CoachReportPanel from './CoachReportPanel';
 
 export default function DrTcuContainer() {
-    const { messages, flowState, handleIngestion, handleDiagnostic, workout } = useDrTcu();
+    const { messages, flowState, handleIngestion, handleDiagnostic, workout, hardData, decision } = useDrTcu();
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
@@ -37,61 +37,68 @@ export default function DrTcuContainer() {
     }
 
     return (
-        <div className="flex flex-col h-[80vh] w-full max-w-4xl bg-surface rounded-xl border border-zinc-800 shadow-2xl overflow-hidden">
-            {/* Header */}
-            <div className="bg-zinc-900 border-b border-zinc-800 p-4 flex items-center space-x-3">
-                <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
-                    <Bot className="w-6 h-6 text-emerald-500" />
-                </div>
-                <div>
-                    <h2 className="text-lg font-display font-medium text-white">TCU AI教練</h2>
-                    <p className="text-xs text-zinc-400">Scientific Cycling Coach • v1.0</p>
-                </div>
-                <div className="ml-auto flex items-center gap-2">
-                    <button
-                        onClick={() => navigate('/analysis')}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-xs border border-zinc-700"
-                        title="查看活動分析"
-                    >
-                        <TrendingUp className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">活動分析</span>
-                    </button>
-                    <StravaConnect />
-                </div>
+        <div className="w-full max-w-7xl mx-auto h-[85vh] grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 lg:p-0">
+            {/* Left Panel: Professional Report (4 cols) */}
+            <div className="lg:col-span-4 h-full bg-surface rounded-xl border border-zinc-800 shadow-2xl overflow-hidden order-2 lg:order-1">
+                <CoachReportPanel hardData={hardData} decision={decision} />
             </div>
 
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                {messages.map((msg) => (
-                    <MessageItem
-                        key={msg.id}
-                        message={msg}
-                        onFormSubmit={handleDiagnostic}
-                        workout={workout}
-                    />
-                ))}
-                <div ref={messagesEndRef} />
-            </div>
+            {/* Right Panel: AI Chat Interface (8 cols) */}
+            <div className="lg:col-span-8 h-full bg-surface rounded-xl border border-zinc-800 shadow-2xl overflow-hidden flex flex-col order-1 lg:order-2">
+                {/* Header */}
+                <div className="bg-zinc-900 border-b border-zinc-800 p-4 flex items-center space-x-3 shrink-0">
+                    <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
+                        <Bot className="w-6 h-6 text-emerald-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-display font-medium text-white">TCU AI教練</h2>
+                        <p className="text-xs text-zinc-400">Scientific Cycling Coach • v2.0</p>
+                    </div>
+                    <div className="ml-auto flex items-center gap-2">
+                        <button
+                            onClick={() => navigate('/analysis')}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-xs border border-zinc-700"
+                            title="查看活動分析"
+                        >
+                            <TrendingUp className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">活動分析</span>
+                        </button>
+                    </div>
+                </div>
 
-            {/* Input Area (Only visible in Ingestion) */}
-            <div className={`p-4 bg-zinc-900 border-t border-zinc-800 transition-all ${flowState !== 'INGESTION' ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-                <div className="relative">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={flowState === 'INGESTION' ? "輸入昨日數據 (例: TSS 150)..." : "等待分析..."}
-                        className="w-full bg-zinc-950 border border-zinc-800 text-white rounded-lg pl-4 pr-12 py-3 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors placeholder:text-zinc-600"
-                        disabled={flowState !== 'INGESTION'}
-                    />
-                    <button
-                        onClick={handleSend}
-                        disabled={!input.trim() || flowState !== 'INGESTION'}
-                        className="absolute right-2 top-2 p-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-500 disabled:opacity-50 disabled:hover:bg-emerald-600 transition-colors"
-                    >
-                        <Send className="w-4 h-4" />
-                    </button>
+                {/* Messages Area */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                    {messages.map((msg) => (
+                        <MessageItem
+                            key={msg.id}
+                            message={msg}
+                            onFormSubmit={handleDiagnostic}
+                            workout={workout}
+                        />
+                    ))}
+                    <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input Area (Only visible in Ingestion) */}
+                <div className={`p-4 bg-zinc-900 border-t border-zinc-800 transition-all shrink-0 ${flowState !== 'INGESTION' ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder={flowState === 'INGESTION' ? "輸入昨日數據 (例: TSS 150)..." : "等待分析..."}
+                            className="w-full bg-zinc-950 border border-zinc-800 text-white rounded-lg pl-4 pr-12 py-3 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors placeholder:text-zinc-600"
+                            disabled={flowState !== 'INGESTION'}
+                        />
+                        <button
+                            onClick={handleSend}
+                            disabled={!input.trim() || flowState !== 'INGESTION'}
+                            className="absolute right-2 top-2 p-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-500 disabled:opacity-50 disabled:hover:bg-emerald-600 transition-colors"
+                        >
+                            <Send className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

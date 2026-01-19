@@ -13,6 +13,11 @@ export interface UserHardData {
     yesterdayTss: number;
     yesterdayIf: number;
     tsb: number; // Training Stress Balance
+    recentActivities?: any[];
+    sufferScore?: number;
+    kilojoules?: number;
+    maxHeartRate?: number;
+    avgHeartRate?: number;
 }
 
 export interface UserSubjectiveData {

@@ -92,29 +92,28 @@ export function useDrTcu() {
                         }
                     }
 
-                    const fifteenDaysAgo = new Date();
-                    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
-                    const dateLimit = fifteenDaysAgo.toISOString();
+                    // 建構查詢 (最近 30 天)
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    const dateLimit = thirtyDaysAgo.toISOString();
 
-                    // 建構查詢
                     let query = supabase
                         .from('strava_activities')
-                        .select('id, athlete_id, name, moving_time, average_watts, weighted_average_watts, start_date, gear_id, device_name, average_heartrate, average_temp')
+                        .select('id, athlete_id, name, moving_time, average_watts, weighted_average_watts, start_date, start_date_local, gear_id, device_name, average_heartrate, max_heartrate, average_temp, distance, total_elevation_gain, suffer_score, kilojoules')
                         .gte('start_date', dateLimit)
-                        .order('start_date', { ascending: false })
-                        .limit(1);
+                        .order('start_date', { ascending: false });
 
                     // 若有 ID 則進行過濾，確保只看到自己的數據
                     if (athleteId) {
                         query = query.eq('athlete_id', athleteId);
                     }
 
-                    const { data: latestActivities, error } = await query;
+                    const { data: recentActivities, error } = await query;
 
                     if (error) throw error;
 
-                    if (latestActivities && latestActivities.length > 0) {
-                        const lastActivity = latestActivities[0];
+                    if (recentActivities && recentActivities.length > 0) {
+                        const lastActivity = recentActivities[0];
 
                         // 2. 獲取單車名稱 (如果要顯示使用的車子)
                         let bikeName = '未知單車';
@@ -130,7 +129,22 @@ export function useDrTcu() {
                         // 3. 計算 TSS 與強度 (IF)
                         // 優先使用加權平均功率 (Weighted Average Watts)，若無則用平均功率
                         const power = lastActivity.weighted_average_watts || lastActivity.average_watts || 150;
-                        const ftp = 250; // 預設值，未來可從 user profile 抓取
+                        
+                        // 優先順序: 1. 手動設定 (LocalStorage) 2. Strava Profile 3. 預設值 (200)
+                        let ftp = 200; 
+                        const manualFtp = localStorage.getItem('user_ftp');
+
+                        if (manualFtp) {
+                            ftp = parseInt(manualFtp, 10);
+                        } else if (storedAthlete) {
+                            try {
+                                const profile = JSON.parse(storedAthlete);
+                                if (profile.ftp) ftp = profile.ftp;
+                            } catch (e) {
+                                console.error("Failed to parse stored athlete for FTP", e);
+                            }
+                        }
+
                         const intensityFactor = power / ftp;
 
                         // TSS 公式: (sec * power * IF) / (FTP * 3600) * 100
@@ -141,7 +155,12 @@ export function useDrTcu() {
                             ftp,
                             yesterdayTss: tss,
                             yesterdayIf: Number(intensityFactor.toFixed(2)),
-                            tsb: -15 // 模擬 TSB 疲勞值
+                            tsb: -15, // 模擬 TSB 疲勞值
+                            recentActivities: recentActivities, // Pass all fetched activities
+                            sufferScore: lastActivity.suffer_score || 0,
+                            kilojoules: lastActivity.kilojoules || 0,
+                            maxHeartRate: lastActivity.max_heartrate || 0,
+                            avgHeartRate: lastActivity.average_heartrate || 0
                         };
 
                         setHardData(newData);
@@ -233,7 +252,21 @@ export function useDrTcu() {
             };
             fetchData();
         }
-    }, [hasToken, flowState, hardData, addMessage]); // Depend on hasToken
+    }, [hasToken, flowState, hardData, addMessage]); 
+
+    // Listen for manual FTP updates
+    useEffect(() => {
+        const handleFtpUpdate = () => {
+           // Reset hardData to null to trigger refetch (simple way)
+           // Or ideally, just update the FTP part of hardData.
+           // For simplicity in this Architecture:
+           setHardData(null); 
+           isFetchingRef.current = false; // Allow refetch
+        };
+
+        window.addEventListener('user-ftp-update', handleFtpUpdate);
+        return () => window.removeEventListener('user-ftp-update', handleFtpUpdate);
+    }, []);
 
     const handleIngestion = useCallback((input: string) => {
         // 模擬解析過程 (Mock parsing hard data from input string)
