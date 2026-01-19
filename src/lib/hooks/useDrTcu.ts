@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
-import { UserHardData, UserSubjectiveData, ChatMessage, DailyWorkout, DecisionResult } from '../../types/coach';
+import { UserHardData, UserSubjectiveData, ChatMessage, DailyWorkout, DecisionResult, StravaActivity } from '../../types/coach';
 import { decideTraining } from '../drTcu/decisionEngine';
 import { generateWorkout } from '../drTcu/workoutGenerator';
 import { analyzeStreams, getZoneDistribution, StravaStream } from '../drTcu/streamAnalyzer';
@@ -129,9 +129,9 @@ export function useDrTcu() {
                         // 3. 計算 TSS 與強度 (IF)
                         // 優先使用加權平均功率 (Weighted Average Watts)，若無則用平均功率
                         const power = lastActivity.weighted_average_watts || lastActivity.average_watts || 150;
-                        
+
                         // 優先順序: 1. 手動設定 (LocalStorage) 2. Strava Profile 3. 預設值 (200)
-                        let ftp = 200; 
+                        let ftp = 200;
                         const manualFtp = localStorage.getItem('user_ftp');
 
                         if (manualFtp) {
@@ -156,7 +156,10 @@ export function useDrTcu() {
                             yesterdayTss: tss,
                             yesterdayIf: Number(intensityFactor.toFixed(2)),
                             tsb: -15, // 模擬 TSB 疲勞值
-                            recentActivities: recentActivities, // Pass all fetched activities
+                            recentActivities: (recentActivities || []).map((act: Record<string, unknown>) => ({
+                                ...act,
+                                id: act.id as number | string // Ensure ID is passed correctly, could be number or string
+                            })) as unknown as StravaActivity[],
                             sufferScore: lastActivity.suffer_score || 0,
                             kilojoules: lastActivity.kilojoules || 0,
                             maxHeartRate: lastActivity.max_heartrate || 0,
@@ -252,16 +255,16 @@ export function useDrTcu() {
             };
             fetchData();
         }
-    }, [hasToken, flowState, hardData, addMessage]); 
+    }, [hasToken, flowState, hardData, addMessage]);
 
     // Listen for manual FTP updates
     useEffect(() => {
         const handleFtpUpdate = () => {
-           // Reset hardData to null to trigger refetch (simple way)
-           // Or ideally, just update the FTP part of hardData.
-           // For simplicity in this Architecture:
-           setHardData(null); 
-           isFetchingRef.current = false; // Allow refetch
+            // Reset hardData to null to trigger refetch (simple way)
+            // Or ideally, just update the FTP part of hardData.
+            // For simplicity in this Architecture:
+            setHardData(null);
+            isFetchingRef.current = false; // Allow refetch
         };
 
         window.addEventListener('user-ftp-update', handleFtpUpdate);
