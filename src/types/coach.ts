@@ -8,12 +8,30 @@ export interface PowerZone {
     description: string;
 }
 
+export interface StravaActivity {
+    id: number;
+    name: string;
+    distance: number;
+    moving_time: number;
+    elapsed_time: number;
+    total_elevation_gain: number;
+    type: string;
+    start_date: string;
+    start_date_local: string;
+    average_watts?: number;
+    weighted_average_watts?: number;
+    suffer_score?: number;
+    kilojoules?: number;
+    average_heartrate?: number;
+    max_heartrate?: number;
+}
+
 export interface UserHardData {
     ftp: number;
     yesterdayTss: number;
     yesterdayIf: number;
     tsb: number; // Training Stress Balance
-    recentActivities?: any[];
+    recentActivities?: StravaActivity[];
     sufferScore?: number;
     kilojoules?: number;
     maxHeartRate?: number;

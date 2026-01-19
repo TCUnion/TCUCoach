@@ -1,6 +1,6 @@
 import { Activity, Battery, TrendingUp, User, Zap } from 'lucide-react';
 import { useEffect } from 'react';
-import { UserHardData, DecisionResult } from '../../types/coach';
+import { UserHardData, DecisionResult, StravaActivity } from '../../types/coach';
 import { useStravaProfile } from '../../lib/hooks/useStravaProfile';
 
 interface CoachReportPanelProps {
@@ -9,7 +9,7 @@ interface CoachReportPanelProps {
 }
 
 export default function CoachReportPanel({ hardData, decision }: CoachReportPanelProps) {
-    const { profile, loading } = useStravaProfile();
+    const { profile } = useStravaProfile();
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
@@ -299,7 +299,7 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
             <div className="pt-2 border-t border-zinc-800">
                 <h3 className="text-sm text-zinc-400 font-medium mb-3">近期活動 (過去30天)</h3>
                 <div className="space-y-2">
-                    {hardData?.recentActivities?.slice(0, 5).map((activity: any) => {
+                    {hardData?.recentActivities?.slice(0, 5).map((activity: StravaActivity) => {
                          const actPower = activity.weighted_average_watts || activity.average_watts || 0;
                          const actFtp = hardData.ftp || 200;
                          const actIf = actPower / actFtp;
