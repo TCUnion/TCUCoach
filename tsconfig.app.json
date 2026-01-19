@@ -27,5 +27,16 @@
     },
     "include": [
         "src"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "backend",
+        "skills",
+        "public",
+        ".agent",
+        ".github",
+        ".husky",
+        "*.sql"
     ]
 }
