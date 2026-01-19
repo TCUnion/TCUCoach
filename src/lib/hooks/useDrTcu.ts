@@ -92,16 +92,21 @@ export function useDrTcu() {
                         }
                     }
 
+                    const fifteenDaysAgo = new Date();
+                    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+                    const dateLimit = fifteenDaysAgo.toISOString();
+
                     // 建構查詢
                     let query = supabase
                         .from('strava_activities')
-                        .select('*')
+                        .select('id, athlete_id, name, moving_time, average_watts, weighted_average_watts, start_date, gear_id, device_name, average_heartrate, average_temp')
+                        .gte('start_date', dateLimit)
                         .order('start_date', { ascending: false })
                         .limit(1);
 
                     // 若有 ID 則進行過濾，確保只看到自己的數據
                     if (athleteId) {
-                        query = query.eq('athlete_id', athleteId.toString());
+                        query = query.eq('athlete_id', athleteId);
                     }
 
                     const { data: latestActivities, error } = await query;

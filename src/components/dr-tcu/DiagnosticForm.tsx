@@ -157,28 +157,49 @@ function ManualSyncSection() {
             setStatus('success');
             setTimeout(() => setStatus('idle'), 3000);
             setActivityId('');
+            
+            // 觸發重新抓取活動，更新同步狀態
+            window.dispatchEvent(new CustomEvent('strava-token-update'));
         } catch (err) {
             console.error(err);
             setStatus('error');
             setTimeout(() => setStatus('idle'), 3000);
-            alert('手動同步觸發失敗，請檢查網路或 Console 錯誤訊息');
         }
     };
 
     return (
         <div className="pt-6 mt-6 border-t border-zinc-800">
             <h4 className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-3">手動同步 Strava 活動</h4>
+            
+            {/* 狀態通知 */}
+            {status !== 'idle' && (
+                <div className={`mb-3 p-2 rounded text-xs border animate-in fade-in slide-in-from-top-1 ${
+                    status === 'loading' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' :
+                    status === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
+                    'bg-red-500/10 border-red-500/30 text-red-400'
+                }`}>
+                    {status === 'loading' ? '正在同步活動，請稍候...' :
+                     status === 'success' ? '同步請求已發送！請稍後查看數據變動。' :
+                     '同步失敗，請檢查網路連線。'}
+                </div>
+            )}
+
             <div className="flex flex-col gap-2">
                 <select
                     value={activityId}
                     onChange={(e) => setActivityId(e.target.value)}
-                    disabled={loading}
-                    className="w-full bg-black/30 border border-zinc-700 rounded text-sm px-3 py-2 text-zinc-300 focus:border-emerald-500 focus:outline-none appearance-none truncate"
+                    disabled={loading || status === 'loading'}
+                    className="w-full bg-black/30 border border-zinc-700 rounded text-sm px-3 py-2 text-zinc-300 focus:border-emerald-500 focus:outline-none appearance-none truncate disabled:opacity-50"
                 >
                     <option value="">{loading ? "載入中..." : "選擇最近活動..."}</option>
                     {activities.map(act => (
-                        <option key={act.id} value={act.activity_id}>
-                            {new Date(act.start_date_local).toLocaleDateString()} - {act.name}
+                        <option 
+                            key={act.id} 
+                            value={act.id}
+                            disabled={act.isSynced}
+                            className={act.isSynced ? 'text-zinc-500 italic' : 'text-zinc-200'}
+                        >
+                            {new Date(act.start_date_local).toLocaleDateString()} - {act.name} {act.isSynced ? '(已上傳)' : ''}
                         </option>
                     ))}
                 </select>
@@ -186,14 +207,16 @@ function ManualSyncSection() {
                     type="button"
                     onClick={handleSync}
                     disabled={!activityId || status === 'loading'}
-                    className={`w-full px-3 py-2 rounded text-sm font-medium transition-colors ${status === 'success' ? 'bg-green-500/20 text-green-400 border border-green-500/50' :
-                        status === 'error' ? 'bg-red-500/20 text-red-400 border border-red-500/50' :
-                            'bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700 hover:bg-zinc-700'
-                        }`}
+                    className={`w-full px-3 py-2 rounded text-sm font-medium transition-colors ${
+                        status === 'loading' ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' :
+                        status === 'success' ? 'bg-emerald-600 text-white' :
+                        status === 'error' ? 'bg-red-600 text-white' :
+                        'bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700 hover:bg-zinc-700'
+                    }`}
                 >
                     {status === 'loading' ? '處理中...' :
-                        status === 'success' ? '已發送同步請求' :
-                            status === 'error' ? '請求失敗' : '同步所選活動'}
+                        status === 'success' ? '發送成功' :
+                            status === 'error' ? '重試同步' : '同步所選活動'}
                 </button>
             </div>
             <p className="text-[10px] text-zinc-600 mt-2">

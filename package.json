@@ -7,8 +7,15 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "check": "npm run lint && npm run build",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler pages deploy dist"
+    "deploy": "npm run build && wrangler pages deploy dist",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix"
+    ]
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.90.1",
@@ -33,6 +40,8 @@
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
