@@ -39,16 +39,16 @@ export default function DrTcuContainer() {
     return (
         <div className="w-full max-w-7xl mx-auto h-[85vh] grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 lg:p-0">
             {/* Left Panel: Professional Report (4 cols) */}
-            <div className="lg:col-span-4 h-full bg-surface rounded-xl border border-zinc-800 shadow-2xl overflow-hidden order-2 lg:order-1">
+            <div className="lg:col-span-4 h-full bg-surface shadow-glass rounded-3xl border border-white/5 overflow-hidden order-2 lg:order-1 transition-all duration-500 hover:shadow-glass-hover">
                 <CoachReportPanel hardData={hardData} decision={decision} />
             </div>
 
             {/* Right Panel: AI Chat Interface (8 cols) */}
-            <div className="lg:col-span-8 h-full bg-surface rounded-xl border border-zinc-800 shadow-2xl overflow-hidden flex flex-col order-1 lg:order-2">
+            <div className="lg:col-span-8 h-full bg-surface shadow-glass rounded-3xl border border-white/5 overflow-hidden flex flex-col order-1 lg:order-2 transition-all duration-500 hover:shadow-glass-hover">
                 {/* Header */}
-                <div className="bg-zinc-900 border-b border-zinc-800 p-4 flex items-center space-x-3 shrink-0">
-                    <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
-                        <Bot className="w-6 h-6 text-emerald-500" />
+                <div className="bg-surface border-b border-white/5 p-5 flex items-center space-x-3 shrink-0">
+                    <div className="w-10 h-10 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 shadow-inner">
+                        <Bot className="w-6 h-6 text-primary" />
                     </div>
                     <div>
                         <h2 className="text-lg font-display font-medium text-white">TCU AI教練</h2>
@@ -59,6 +59,7 @@ export default function DrTcuContainer() {
                             onClick={() => navigate('/analysis')}
                             className="flex items-center gap-1 px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-xs border border-zinc-700"
                             title="查看活動分析"
+                            aria-label="活動分析"
                         >
                             <TrendingUp className="w-3.5 h-3.5" />
                             <span className="hidden sm:inline">活動分析</span>
@@ -80,23 +81,24 @@ export default function DrTcuContainer() {
                 </div>
 
                 {/* Input Area (Only visible in Ingestion) */}
-                <div className={`p-4 bg-zinc-900 border-t border-zinc-800 transition-all shrink-0 ${flowState !== 'INGESTION' ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-                    <div className="relative">
+                <div className={`p-5 bg-surface border-t border-white/5 transition-all shrink-0 ${flowState !== 'INGESTION' ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+                    <div className="relative group">
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={flowState === 'INGESTION' ? "輸入昨日數據 (例: TSS 150)..." : "等待分析..."}
-                            className="w-full bg-zinc-950 border border-zinc-800 text-white rounded-lg pl-4 pr-12 py-3 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors placeholder:text-zinc-600"
+                            className="w-full bg-background/50 border border-white/10 text-white rounded-2xl pl-5 pr-14 py-3.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-dr-muted/50 shadow-inner"
                             disabled={flowState !== 'INGESTION'}
                         />
                         <button
                             onClick={handleSend}
                             disabled={!input.trim() || flowState !== 'INGESTION'}
-                            className="absolute right-2 top-2 p-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-500 disabled:opacity-50 disabled:hover:bg-emerald-600 transition-colors"
+                            className="absolute right-2 top-2 p-2 bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-30 disabled:hover:bg-primary transition-all shadow-lg shadow-primary/20 active:scale-90 cursor-pointer"
+                            aria-label="發送訊息"
                         >
-                            <Send className="w-4 h-4" />
+                            <Send className="w-4.5 h-4.5" />
                         </button>
                     </div>
                 </div>
@@ -113,15 +115,15 @@ function MessageItem({ message, onFormSubmit, workout }: { message: ChatMessage,
             <div className={`flex max-w-[85%] ${isBot ? 'flex-row' : 'flex-row-reverse'} items-start gap-3`}>
 
                 {/* Avatar */}
-                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${isBot ? 'bg-zinc-800 text-emerald-500' : 'bg-zinc-700 text-zinc-300'}`}>
-                    {isBot ? <Bot className="w-5 h-5" /> : <User className="w-5 h-5" />}
+                <div className={`flex-shrink-0 w-9 h-9 rounded-2xl flex items-center justify-center shadow-sm ${isBot ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-white/5 text-dr-muted border border-white/10'}`}>
+                    {isBot ? <Bot className="w-5.5 h-5.5" /> : <User className="w-5.5 h-5.5" />}
                 </div>
 
                 {/* Content */}
                 <div className={`flex flex-col space-y-2 ${isBot ? 'items-start' : 'items-end'}`}>
-                    <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${isBot
-                        ? 'bg-zinc-800 text-zinc-200 rounded-tl-none border border-zinc-700/50 prose prose-invert prose-sm max-w-none'
-                        : 'bg-emerald-600 text-white rounded-tr-none'
+                    <div className={`px-5 py-3.5 rounded-2xl text-sm leading-relaxed shadow-sm transition-all duration-300 hover:shadow-md ${isBot
+                        ? 'bg-surface/80 backdrop-blur-md text-dr-text rounded-tl-none border border-white/10 prose prose-invert prose-sm max-w-none'
+                        : 'bg-primary text-white rounded-tr-none shadow-primary/20'
                         }`}>
                         {isBot ? (
                             <ReactMarkdown
