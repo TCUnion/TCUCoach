@@ -21,45 +21,51 @@ export default function ResultCard({ workout }: ResultCardProps) {
     };
 
     return (
-        <div className="bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden w-full shadow-lg flex flex-col animate-in zoom-in-95 duration-500">
+        <div className="bg-surface/60 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden w-full shadow-glass flex flex-col animate-in zoom-in-95 duration-500 hover:shadow-glass-hover transition-all">
             {/* Header with Title & Summary */}
-            <div className="p-5 border-b border-zinc-800 bg-zinc-800/30">
-                <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-display font-semibold text-white tracking-wide">{workout.title}</h3>
-                    <span className={`px-2 py-0.5 text-xs font-mono rounded border ${workout.focus === 'Recovery' ? 'border-green-500/50 text-green-400 bg-green-500/10' :
-                        workout.focus === 'Endurance' ? 'border-cyan-500/50 text-cyan-400 bg-cyan-500/10' :
-                            workout.focus === 'Tempo' ? 'border-blue-500/50 text-blue-400 bg-blue-500/10' :
-                                workout.focus === 'Threshold' ? 'border-yellow-500/50 text-yellow-400 bg-yellow-500/10' :
+            <div className="p-6 border-b border-white/5 bg-white/5">
+                <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-xl font-display font-semibold text-white tracking-tight">{workout.title}</h3>
+                    <span className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border shadow-sm ${workout.focus === 'Recovery' ? 'border-primary/50 text-primary bg-primary/10' :
+                        workout.focus === 'Endurance' ? 'border-blue-400/50 text-blue-400 bg-blue-400/10' :
+                            workout.focus === 'Tempo' ? 'border-violet-500/50 text-violet-400 bg-violet-500/10' :
+                                workout.focus === 'Threshold' ? 'border-secondary/50 text-secondary bg-secondary/10' :
                                     'border-red-500/50 text-red-400 bg-red-500/10'
                         }`}>
                         {workout.focus.toUpperCase()}
                     </span>
                 </div>
-                <div className="flex gap-4 text-xs text-zinc-400 font-mono">
-                    <span>TSS: {workout.totalTss}</span>
-                    <span>Time: {Math.floor(workout.totalDurationSeconds / 60)}m</span>
+                <div className="flex gap-4 text-[11px] text-dr-muted font-bold tracking-widest uppercase">
+                    <div className="flex items-center gap-1.5">
+                        <span className="w-1 h-1 bg-primary rounded-full animate-pulse" />
+                        TSS: {workout.totalTss}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className="w-1 h-1 bg-secondary rounded-full animate-pulse" />
+                        Time: {Math.floor(workout.totalDurationSeconds / 60)}m
+                    </div>
                 </div>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-zinc-800">
+            <div className="flex border-b border-white/5 bg-background/20">
                 <button
                     onClick={() => setTab('narrative')}
-                    className={`flex-1 py-3 text-xs font-medium flex items-center justify-center gap-2 hover:bg-zinc-800/50 transition-colors ${tab === 'narrative' ? 'text-emerald-400 border-b-2 border-emerald-500' : 'text-zinc-500'}`}
+                    className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-white/5 transition-all cursor-pointer ${tab === 'narrative' ? 'text-primary bg-primary/5 border-b-2 border-primary' : 'text-dr-muted grayscale opacity-70'}`}
                 >
                     <Bike className="w-4 h-4" /> 敘事模式
                 </button>
                 <button
                     onClick={() => setTab('table')}
-                    className={`flex-1 py-3 text-xs font-medium flex items-center justify-center gap-2 hover:bg-zinc-800/50 transition-colors ${tab === 'table' ? 'text-emerald-400 border-b-2 border-emerald-500' : 'text-zinc-500'}`}
+                    className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-white/5 transition-all cursor-pointer ${tab === 'table' ? 'text-primary bg-primary/5 border-b-2 border-primary' : 'text-dr-muted grayscale opacity-70'}`}
                 >
                     <List className="w-4 h-4" /> 表格模式
                 </button>
                 <button
                     onClick={() => setTab('zwo')}
-                    className={`flex-1 py-3 text-xs font-medium flex items-center justify-center gap-2 hover:bg-zinc-800/50 transition-colors ${tab === 'zwo' ? 'text-emerald-400 border-b-2 border-emerald-500' : 'text-zinc-500'}`}
+                    className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-white/5 transition-all cursor-pointer ${tab === 'zwo' ? 'text-primary bg-primary/5 border-b-2 border-primary' : 'text-dr-muted grayscale opacity-70'}`}
                 >
-                    <FileCode className="w-4 h-4" /> Zwift Code
+                    <FileCode className="w-4 h-4" /> Zwift
                 </button>
             </div>
 

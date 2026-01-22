@@ -62,7 +62,7 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
     };
 
     return (
-        <div className="h-full flex flex-col bg-zinc-900/50 p-6 space-y-8 overflow-y-auto">
+        <div className="h-full flex flex-col bg-surface/40 backdrop-blur-xl p-6 space-y-8 overflow-y-auto border-r border-white/5">
             {/* Header / Profile */}
             <div className="flex items-center gap-4 border-b border-zinc-800 pb-6">
                 <div className="relative">
@@ -74,9 +74,9 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                         )}
                     </div>
                     {profile && (
-                        <div className="absolute -bottom-1 -right-1 bg-[#FC4C02] rounded-full p-1 border-2 border-zinc-900">
+                        <div className="absolute -bottom-1 -right-1 bg-strava rounded-full p-1 border-2 border-surface shadow-lg">
                             <svg className="w-3 h-3 text-white fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.477 0l-4.91 9.775h4.172z"/>
+                                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.477 0l-4.91 9.775h4.172z" />
                             </svg>
                         </div>
                     )}
@@ -86,16 +86,17 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                         {profile ? `${profile.firstname} ${profile.lastname}` : '訪客運動員'}
                     </h2>
                     <div className="flex items-center gap-2">
-                         {profile ? (
-                            <span className="text-[10px] font-bold text-[#FC4C02] tracking-wider uppercase">STRAVA CONNECTED</span>
-                         ) : (
-                            <button 
+                        {profile ? (
+                            <span className="text-[10px] font-bold text-strava tracking-wider uppercase">STRAVA CONNECTED</span>
+                        ) : (
+                            <button
                                 onClick={handleConnect}
-                                className="px-3 py-1 bg-[#FC4C02] hover:bg-[#E34402] text-white text-xs font-bold rounded transition-colors flex items-center gap-1"
+                                className="px-3 py-1.5 bg-strava hover:bg-strava/90 text-white text-xs font-bold rounded-lg transition-all hover:scale-105 active:scale-95 shadow-lg shadow-strava/20 flex items-center gap-1 cursor-pointer"
+                                aria-label="連結 Strava 帳號"
                             >
                                 連結 Strava
                             </button>
-                         )}
+                        )}
                     </div>
                 </div>
             </div>
@@ -103,7 +104,7 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
             {/* Key Metrics Grid */}
             <div className="grid grid-cols-2 gap-4">
                 {/* FTP */}
-                <div 
+                <div
                     onClick={() => {
                         const currentFtp = hardData?.ftp || 200;
                         const newFtp = window.prompt('請輸入新的 FTP (瓦數):', currentFtp.toString());
@@ -112,33 +113,34 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                             window.dispatchEvent(new Event('user-ftp-update'));
                         }
                     }}
-                    className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 relative group hover:border-emerald-500/50 transition-all cursor-pointer hover:bg-zinc-900/50"
+                    className="bg-surface/50 border border-white/5 rounded-2xl p-4 relative group hover:border-primary/50 transition-all cursor-pointer hover:bg-surface hover:shadow-glass active:scale-[0.98]"
                     title="點擊修改 FTP"
+                    aria-label="修改功能性閾值功率"
                 >
-                    <div className="absolute top-4 right-4 p-1.5 bg-zinc-900 rounded-lg group-hover:bg-emerald-500/20 transition-colors">
-                        <Zap className="w-4 h-4 text-yellow-500 group-hover:text-emerald-400" />
+                    <div className="absolute top-4 right-4 p-1.5 bg-white/5 rounded-xl group-hover:bg-primary/20 transition-colors">
+                        <Zap className="w-4 h-4 text-blue-400 group-hover:text-primary animate-pulse-slow" />
                     </div>
-                    <p className="text-xs text-zinc-500 mb-1 group-hover:text-zinc-300">功能性閾值功率 (FTP)</p>
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-dr-muted mb-1 group-hover:text-primary transition-colors">FTP</p>
                     <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-display font-bold text-white group-hover:text-emerald-400 transition-colors">
+                        <span className="text-2xl font-display font-bold text-white group-hover:text-primary transition-colors">
                             {hardData?.ftp || '--'}
                         </span>
-                        <span className="text-xs text-zinc-500 font-mono">W</span>
+                        <span className="text-xs text-dr-muted font-mono">W</span>
                     </div>
                 </div>
 
                 {/* TSB (Form) */}
-                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 relative group hover:border-zinc-700 transition-colors">
-                    <div className="absolute top-4 right-4 p-1.5 bg-zinc-900 rounded-lg">
-                        <Battery className={`w-4 h-4 ${hardData ? getTsbColor(hardData.tsb) : 'text-zinc-500'}`} />
+                <div className="bg-surface/50 border border-white/5 rounded-2xl p-4 relative group hover:border-white/20 transition-all cursor-default">
+                    <div className="absolute top-4 right-4 p-1.5 bg-white/5 rounded-xl">
+                        <Battery className={`w-4 h-4 ${hardData ? getTsbColor(hardData.tsb) : 'text-dr-muted'}`} />
                     </div>
-                    <p className="text-xs text-zinc-500 mb-1">體能狀態 (TSB)</p>
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-dr-muted mb-1">TSB</p>
                     <div className="flex items-baseline gap-1">
-                        <span className={`text-2xl font-display font-bold ${hardData ? getTsbColor(hardData.tsb) : 'text-zinc-500'}`}>
+                        <span className={`text-2xl font-display font-bold ${hardData ? getTsbColor(hardData.tsb) : 'text-dr-muted'}`}>
                             {hardData?.tsb ?? '--'}
                         </span>
                     </div>
-                    <p className="text-[10px] text-zinc-500 mt-1">{hardData ? getTsbLabel(hardData.tsb) : '無數據'}</p>
+                    <p className="text-[10px] text-dr-muted mt-1 font-medium">{hardData ? getTsbLabel(hardData.tsb) : '無數據'}</p>
                 </div>
             </div>
 
@@ -147,25 +149,23 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                 {/* Suffer Score */}
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 relative group hover:border-zinc-700 transition-colors">
                     <div className="absolute top-4 right-4 p-1.5 bg-zinc-900 rounded-lg">
-                        <Activity className={`w-4 h-4 ${
-                            (hardData?.sufferScore ?? 0) > 100 ? 'text-red-500' : 
-                            (hardData?.sufferScore ?? 0) > 50 ? 'text-amber-500' : 
-                            'text-emerald-500'
-                        }`} />
+                        <Activity className={`w-4 h-4 ${(hardData?.sufferScore ?? 0) > 100 ? 'text-red-500' :
+                                (hardData?.sufferScore ?? 0) > 50 ? 'text-amber-500' :
+                                    'text-emerald-500'
+                            }`} />
                     </div>
                     <p className="text-xs text-zinc-500 mb-1">相對耗力 (Suffer)</p>
                     <div className="flex items-baseline gap-1">
-                        <span className={`text-2xl font-display font-bold ${
-                            (hardData?.sufferScore ?? 0) > 100 ? 'text-red-500' : 
-                            (hardData?.sufferScore ?? 0) > 50 ? 'text-amber-500' : 
-                            'text-emerald-500'
-                        }`}>
+                        <span className={`text-2xl font-display font-bold ${(hardData?.sufferScore ?? 0) > 100 ? 'text-red-500' :
+                                (hardData?.sufferScore ?? 0) > 50 ? 'text-amber-500' :
+                                    'text-emerald-500'
+                            }`}>
                             {hardData?.sufferScore ?? '--'}
                         </span>
                     </div>
                     <p className="text-[10px] text-zinc-500 mt-1">
-                        {(hardData?.sufferScore ?? 0) > 100 ? '極艱苦' : 
-                         (hardData?.sufferScore ?? 0) > 50 ? '艱苦' : '輕鬆'}
+                        {(hardData?.sufferScore ?? 0) > 100 ? '極艱苦' :
+                            (hardData?.sufferScore ?? 0) > 50 ? '艱苦' : '輕鬆'}
                     </p>
                 </div>
 
@@ -216,8 +216,8 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                         <span className="text-xs text-zinc-500 font-mono">bpm</span>
                     </div>
                     <p className="text-[10px] text-zinc-500 mt-1">
-                        {hardData?.avgHeartRate && hardData?.maxHeartRate 
-                            ? `${Math.round((hardData.avgHeartRate / hardData.maxHeartRate) * 100)}% 最大心率` 
+                        {hardData?.avgHeartRate && hardData?.maxHeartRate
+                            ? `${Math.round((hardData.avgHeartRate / hardData.maxHeartRate) * 100)}% 最大心率`
                             : '--'}
                     </p>
                 </div>
@@ -236,23 +236,23 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                         </span>
                     )}
                 </div>
-                
-                <div className="bg-zinc-950 rounded-xl border border-zinc-800 p-5">
+
+                <div className="bg-surface/50 rounded-2xl border border-white/5 p-5 shadow-inner">
                     <div className="flex justify-between items-end mb-2">
-                        <span className="text-xs text-zinc-500">訓練壓力指數 (TSS)</span>
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-dr-muted">TSS</span>
                         <span className="text-xl font-display font-bold text-white">{hardData?.yesterdayTss || 0}</span>
                     </div>
                     {/* Visual Bar for TSS (0-300 range approximate) */}
-                    <div className="w-full h-2 bg-zinc-900 rounded-full overflow-hidden">
-                        <div 
-                            className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-1000"
+                    <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-gradient-to-r from-primary to-blue-400 rounded-full transition-all duration-1000"
                             style={{ width: `${Math.min(((hardData?.yesterdayTss || 0) / 300) * 100, 100)}%` }}
                         />
                     </div>
-                    <div className="flex justify-between mt-1.5 text-[10px] text-zinc-600 font-mono">
-                        <span>恢復</span>
-                        <span>訓練</span>
-                        <span>超負荷</span>
+                    <div className="flex justify-between mt-1.5 text-[10px] text-dr-muted font-bold tracking-tighter uppercase">
+                        <span>Rest</span>
+                        <span>Train</span>
+                        <span>Overload</span>
                     </div>
                 </div>
             </div>
@@ -284,7 +284,7 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                     </div>
                 )}
             </div>
-            
+
             {/* System Status / Footer */}
             <div className="mt-auto pt-6 border-t border-zinc-800/30">
                 <div className="flex justify-between items-center text-[10px] text-zinc-600 font-mono">
@@ -300,11 +300,11 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                 <h3 className="text-sm text-zinc-400 font-medium mb-3">近期活動 (過去30天)</h3>
                 <div className="space-y-2">
                     {hardData?.recentActivities?.slice(0, 5).map((activity: StravaActivity) => {
-                         const actPower = activity.weighted_average_watts || activity.average_watts || 0;
-                         const actFtp = hardData.ftp || 200;
-                         const actIf = actPower / actFtp;
-                         const actMovingTime = activity.moving_time || 0;
-                         const actTss = Math.round((actMovingTime * actPower * actIf) / (actFtp * 3600) * 100);
+                        const actPower = activity.weighted_average_watts || activity.average_watts || 0;
+                        const actFtp = hardData.ftp || 200;
+                        const actIf = actPower / actFtp;
+                        const actMovingTime = activity.moving_time || 0;
+                        const actTss = Math.round((actMovingTime * actPower * actIf) / (actFtp * 3600) * 100);
 
                         return (
                             <div key={activity.id} className="bg-zinc-950/50 border border-zinc-900 rounded-lg p-3 hover:bg-zinc-900 transition-colors">
