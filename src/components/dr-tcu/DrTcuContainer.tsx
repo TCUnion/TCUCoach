@@ -37,14 +37,14 @@ export default function DrTcuContainer() {
     }
 
     return (
-        <div className="w-full max-w-7xl mx-auto h-[85vh] grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 lg:p-0">
+        <div className="w-full max-w-7xl mx-auto lg:h-[85vh] h-auto grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 p-2 lg:p-0">
             {/* Left Panel: Professional Report (4 cols) */}
-            <div className="lg:col-span-4 h-full bg-surface shadow-glass rounded-3xl border border-white/5 overflow-hidden order-2 lg:order-1 transition-all duration-500 hover:shadow-glass-hover">
+            <div className="lg:col-span-4 lg:h-full bg-surface shadow-glass rounded-2xl lg:rounded-3xl border border-white/5 overflow-hidden order-2 lg:order-1 transition-all duration-500 hover:shadow-glass-hover">
                 <CoachReportPanel hardData={hardData} decision={decision} />
             </div>
 
             {/* Right Panel: AI Chat Interface (8 cols) */}
-            <div className="lg:col-span-8 h-full bg-surface shadow-glass rounded-3xl border border-white/5 overflow-hidden flex flex-col order-1 lg:order-2 transition-all duration-500 hover:shadow-glass-hover">
+            <div className="lg:col-span-8 lg:h-full min-h-[500px] lg:min-h-0 bg-surface shadow-glass rounded-2xl lg:rounded-3xl border border-white/5 overflow-hidden flex flex-col order-1 lg:order-2 transition-all duration-500 hover:shadow-glass-hover">
                 {/* Header */}
                 <div className="bg-surface border-b border-white/5 p-5 flex items-center space-x-3 shrink-0">
                     <div className="w-10 h-10 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 shadow-inner">
@@ -59,7 +59,6 @@ export default function DrTcuContainer() {
                             onClick={() => navigate('/analysis')}
                             className="flex items-center gap-1 px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-xs border border-zinc-700"
                             title="查看活動分析"
-                            aria-label="活動分析"
                         >
                             <TrendingUp className="w-3.5 h-3.5" />
                             <span className="hidden sm:inline">活動分析</span>

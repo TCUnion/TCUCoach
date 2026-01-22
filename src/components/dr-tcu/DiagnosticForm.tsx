@@ -36,7 +36,7 @@ export default function DiagnosticForm({ onSubmit }: DiagnosticFormProps) {
     return (
         <form
             onSubmit={handleSubmit}
-            className="bg-surface/80 backdrop-blur-md border border-white/10 rounded-3xl p-6 space-y-6 w-full max-w-sm animate-in zoom-in-95 duration-300 max-h-[450px] overflow-y-auto scrollbar-hide shadow-glass"
+            className="bg-surface/80 backdrop-blur-md border border-white/10 rounded-3xl p-6 space-y-6 w-full max-w-sm animate-in zoom-in-95 duration-300 overflow-y-auto scrollbar-hide shadow-glass"
         >
             <h3 className="text-white font-display font-medium border-b border-white/5 pb-3">今日體感回報</h3>
 
@@ -174,8 +174,8 @@ function ManualSyncSection() {
             {/* 狀態通知 */}
             {status !== 'idle' && (
                 <div className={`mb-3 p-2 rounded text-xs border animate-in fade-in slide-in-from-top-1 ${status === 'loading' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' :
-                        status === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
-                            'bg-red-500/10 border-red-500/30 text-red-400'
+                    status === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
+                        'bg-red-500/10 border-red-500/30 text-red-400'
                     }`}>
                     {status === 'loading' ? '正在同步活動，請稍候...' :
                         status === 'success' ? '同步請求已發送！請稍後查看數據變動。' :
@@ -207,9 +207,9 @@ function ManualSyncSection() {
                     onClick={handleSync}
                     disabled={!activityId || status === 'loading'}
                     className={`w-full px-3 py-2 rounded text-sm font-medium transition-colors ${status === 'loading' ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' :
-                            status === 'success' ? 'bg-emerald-600 text-white' :
-                                status === 'error' ? 'bg-red-600 text-white' :
-                                    'bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700 hover:bg-zinc-700'
+                        status === 'success' ? 'bg-emerald-600 text-white' :
+                            status === 'error' ? 'bg-red-600 text-white' :
+                                'bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700 hover:bg-zinc-700'
                         }`}
                 >
                     {status === 'loading' ? '處理中...' :
