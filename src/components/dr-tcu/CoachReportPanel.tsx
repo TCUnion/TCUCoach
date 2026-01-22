@@ -1,7 +1,8 @@
-import { Activity, Battery, TrendingUp, User, Zap } from 'lucide-react';
-import { useEffect } from 'react';
+import { Activity, Battery, CheckCircle2, UploadCloud, RefreshCw, TrendingUp, User, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { UserHardData, DecisionResult, StravaActivity } from '../../types/coach';
 import { useStravaProfile } from '../../lib/hooks/useStravaProfile';
+import { useStravaActivities } from '../../hooks/useStravaActivities';
 
 interface CoachReportPanelProps {
     hardData: UserHardData | null;
@@ -13,6 +14,14 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
+            // 安全修復 2: 驗證訊息來源 (Origin Check)
+            // 僅允許來自信任的 n8n webhook 來源
+            const trustedOrigins = ['https://n8n.criterium.tw'];
+            if (!trustedOrigins.includes(event.origin)) {
+                console.warn('收到來自不信任來源的訊息:', event.origin);
+                return;
+            }
+
             if (event.data?.type === 'STRAVA_AUTH_SUCCESS') {
                 const { athlete } = event.data;
                 console.log('收到 Strava 授權成功訊息:', athlete);
@@ -45,6 +54,54 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
             `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
         );
     };
+
+    const { activities } = useStravaActivities();
+    const [syncingId, setSyncingId] = useState<number | null>(null);
+
+    const handleSync = async (activity: StravaActivity) => {
+        if (syncingId || loadingActivities) return;
+        const activityId = Number(activity.id);
+        setSyncingId(activityId);
+
+        try {
+            const athleteStr = localStorage.getItem('strava_athlete');
+
+            // 安全修復 4: 移除硬編碼 ID，若無 ID 應要求重新授權
+            if (!athleteStr) {
+                throw new Error('請先連結 Strava 帳號再進行同步');
+            }
+            const ownerId = JSON.parse(athleteStr).id;
+
+            const payload = {
+                object_id: activityId,
+                owner_id: ownerId,
+                aspect_type: "create",
+                object_type: "activity"
+            };
+
+            // 改為呼叫本地後端代理
+            const response = await fetch('/api/v1/strava/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || '同步失敗');
+            }
+
+            // 觸發重新抓取活動，更新同步狀態
+            window.dispatchEvent(new CustomEvent('strava-token-update'));
+        } catch (err) {
+            console.error('Sync failed:', err);
+            alert(err instanceof Error ? err.message : '同步發生錯誤，請稍後再試');
+        } finally {
+            setSyncingId(null);
+        }
+    };
+
+    const { loading: loadingActivities } = useStravaActivities();
 
     // Helper to determine fatigue color
     const getTsbColor = (tsb: number) => {
@@ -108,7 +165,14 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                     onClick={() => {
                         const currentFtp = hardData?.ftp || 200;
                         const newFtp = window.prompt('請輸入新的 FTP (瓦數):', currentFtp.toString());
+
+                        // 安全修復 5: 加入數值有效性與範圍驗證 (50W - 600W)
                         if (newFtp && !isNaN(Number(newFtp))) {
+                            const ftpNum = Number(newFtp);
+                            if (ftpNum < 50 || ftpNum > 600) {
+                                alert('請輸入合理的 FTP 數值 (50 - 600)');
+                                return;
+                            }
                             localStorage.setItem('user_ftp', newFtp);
                             window.dispatchEvent(new Event('user-ftp-update'));
                         }
@@ -150,15 +214,15 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 relative group hover:border-zinc-700 transition-colors">
                     <div className="absolute top-4 right-4 p-1.5 bg-zinc-900 rounded-lg">
                         <Activity className={`w-4 h-4 ${(hardData?.sufferScore ?? 0) > 100 ? 'text-red-500' :
-                                (hardData?.sufferScore ?? 0) > 50 ? 'text-amber-500' :
-                                    'text-emerald-500'
+                            (hardData?.sufferScore ?? 0) > 50 ? 'text-amber-500' :
+                                'text-emerald-500'
                             }`} />
                     </div>
                     <p className="text-xs text-zinc-500 mb-1">相對耗力 (Suffer)</p>
                     <div className="flex items-baseline gap-1">
                         <span className={`text-2xl font-display font-bold ${(hardData?.sufferScore ?? 0) > 100 ? 'text-red-500' :
-                                (hardData?.sufferScore ?? 0) > 50 ? 'text-amber-500' :
-                                    'text-emerald-500'
+                            (hardData?.sufferScore ?? 0) > 50 ? 'text-amber-500' :
+                                'text-emerald-500'
                             }`}>
                             {hardData?.sufferScore ?? '--'}
                         </span>
@@ -297,37 +361,65 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
             </div>
             {/* Recent Activities List */}
             <div className="pt-2 border-t border-zinc-800">
-                <h3 className="text-sm text-zinc-400 font-medium mb-3">近期活動 (過去30天)</h3>
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm text-zinc-400 font-medium">近期活動 (過去30天)</h3>
+                    {loadingActivities && <RefreshCw className="w-3 h-3 text-dr-muted animate-spin" />}
+                </div>
                 <div className="space-y-2">
-                    {hardData?.recentActivities?.slice(0, 5).map((activity: StravaActivity) => {
-                        const actPower = activity.weighted_average_watts || activity.average_watts || 0;
-                        const actFtp = hardData.ftp || 200;
+                    {activities.slice(0, 10).map((activity) => {
+                        const actPower = activity.average_watts || 0;
+                        const actFtp = hardData?.ftp || 200;
                         const actIf = actPower / actFtp;
                         const actMovingTime = activity.moving_time || 0;
                         const actTss = Math.round((actMovingTime * actPower * actIf) / (actFtp * 3600) * 100);
+                        const isSynced = activity.isSynced;
+                        const isSyncing = syncingId === Number(activity.id);
 
                         return (
-                            <div key={activity.id} className="bg-zinc-950/50 border border-zinc-900 rounded-lg p-3 hover:bg-zinc-900 transition-colors">
+                            <div key={activity.id} className="group bg-zinc-950/50 border border-zinc-900 rounded-lg p-3 hover:bg-zinc-900 transition-all relative overflow-hidden">
                                 <div className="flex justify-between items-start mb-1">
-                                    <span className="text-zinc-200 font-medium text-sm truncate max-w-[70%]">{activity.name}</span>
-                                    <span className="text-zinc-500 text-xs">
-                                        {new Date(activity.start_date_local).toLocaleDateString()}
-                                    </span>
+                                    <span className="text-zinc-200 font-medium text-sm truncate max-w-[65%]">{activity.name}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-zinc-500 text-[10px] font-mono whitespace-nowrap">
+                                            {new Date(activity.start_date_local).toLocaleDateString()}
+                                        </span>
+                                        {isSynced ? (
+                                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shadow-sm" title="已同步至 TCU" />
+                                        ) : (
+                                            <button
+                                                onClick={() => handleSync(activity as unknown as StravaActivity)}
+                                                disabled={isSyncing}
+                                                className={`p-1 rounded-md transition-all active:scale-90 ${isSyncing ? 'bg-zinc-800' : 'hover:bg-primary/20 hover:text-primary text-dr-muted cursor-pointer'}`}
+                                                title="同步此活動至 TCU"
+                                            >
+                                                {isSyncing ? (
+                                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                                ) : (
+                                                    <UploadCloud className="w-3.5 h-3.5 group-hover:animate-pulse" />
+                                                )}
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-3 text-xs text-zinc-400">
-                                    <span>{(activity.distance / 1000).toFixed(1)} km</span>
-                                    <span>•</span>
-                                    <span>{Math.floor(activity.moving_time / 60)} min</span>
-                                    <span>•</span>
-                                    <span className={actTss > 80 ? 'text-amber-500' : 'text-emerald-500'}>
+                                <div className="flex items-center gap-3 text-[11px] text-zinc-500">
+                                    <span className="flex items-center gap-1 font-mono">
+                                        {(activity.distance / 1000).toFixed(1)} <span className="text-[9px] opacity-60">km</span>
+                                    </span>
+                                    <span className="opacity-30">•</span>
+                                    <span className="flex items-center gap-1 font-mono">
+                                        {Math.floor(activity.moving_time / 60)} <span className="text-[9px] opacity-60">min</span>
+                                    </span>
+                                    <span className="opacity-30">•</span>
+                                    <span className={`font-mono font-bold ${actTss > 80 ? 'text-amber-500/80' : 'text-emerald-500/80'}`}>
                                         TSS {actTss > 0 ? actTss : '--'}
                                     </span>
                                 </div>
+                                {isSyncing && <div className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/30 animate-pulse" />}
                             </div>
                         );
                     })}
-                    {(!hardData?.recentActivities || hardData.recentActivities.length === 0) && (
-                        <div className="text-center py-4 text-zinc-600 text-xs">
+                    {(!loadingActivities && activities.length === 0) && (
+                        <div className="text-center py-6 text-zinc-600 text-xs border border-dashed border-zinc-800 rounded-lg">
                             無近期活動紀錄
                         </div>
                     )}

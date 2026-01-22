@@ -97,18 +97,18 @@ export function useDrTcu() {
                     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                     const dateLimit = thirtyDaysAgo.toISOString();
 
-                    let query = supabase
-                        .from('strava_activities')
-                        .select('id, athlete_id, name, moving_time, average_watts, weighted_average_watts, start_date, start_date_local, gear_id, device_name, average_heartrate, max_heartrate, average_temp, distance, total_elevation_gain, suffer_score, kilojoules')
-                        .gte('start_date', dateLimit)
-                        .order('start_date', { ascending: false });
-
-                    // 若有 ID 則進行過濾，確保只看到自己的數據
-                    if (athleteId) {
-                        query = query.eq('athlete_id', athleteId);
+                    // 安全修復 1: 嚴格過濾使用者數據
+                    // 若無法取得當前登入的 athleteId，則拒絕查詢，防止洩漏或存取到他人數據
+                    if (!athleteId) {
+                        throw new Error('無法識別運動員身份，請重新連結 Strava。');
                     }
 
-                    const { data: recentActivities, error } = await query;
+                    const { data: recentActivities, error } = await supabase
+                        .from('strava_activities')
+                        .select('id, athlete_id, name, moving_time, average_watts, weighted_average_watts, start_date, start_date_local, gear_id, device_name, average_heartrate, max_heartrate, average_temp, distance, total_elevation_gain, suffer_score, kilojoules')
+                        .eq('athlete_id', athleteId) // 確保過濾
+                        .gte('start_date', dateLimit)
+                        .order('start_date', { ascending: false });
 
                     if (error) throw error;
 

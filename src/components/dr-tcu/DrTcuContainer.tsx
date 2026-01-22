@@ -127,11 +127,13 @@ function MessageItem({ message, onFormSubmit, workout }: { message: ChatMessage,
                         {isBot ? (
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
+                                skipHtml={true} // 安全修復 6: 禁用法定 HTML 渲染，防止 XSS
                                 components={{
                                     table: ({ ...props }) => <table className="border-collapse border border-zinc-700 my-2 w-full" {...props} />,
                                     th: ({ ...props }) => <th className="border border-zinc-700 px-3 py-1 bg-zinc-900 font-bold" {...props} />,
                                     td: ({ ...props }) => <td className="border border-zinc-700 px-3 py-1" {...props} />,
                                     img: ({ ...props }) => <img className="max-h-12 object-contain my-2" {...props} />,
+                                    a: ({ ...props }) => <a className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" {...props} />, // 安全強化：防止連結劫持
                                 }}
                             >
                                 {message.content}
