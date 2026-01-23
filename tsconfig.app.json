@@ -35,8 +35,20 @@
         "skills",
         "public",
         ".agent",
+        ".gemini",
+        ".claude",
+        ".cursor",
+        ".codex",
+        ".kiro",
+        ".opencode",
+        ".qoder",
+        ".roo",
+        ".shared",
+        ".trae",
+        ".windsurf",
         ".github",
         ".husky",
-        "*.sql"
+        "*.sql",
+        "**/*.tsbuildinfo"
     ]
 }
