@@ -1,18 +1,28 @@
-import { Activity, Battery, TrendingUp, User, Zap } from 'lucide-react';
-import { useEffect } from 'react';
+import { Activity, Battery, CheckCircle2, UploadCloud, RefreshCw, TrendingUp, User, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { UserHardData, DecisionResult, StravaActivity } from '../../types/coach';
 import { useStravaProfile } from '../../lib/hooks/useStravaProfile';
+import { useStravaActivities } from '../../hooks/useStravaActivities';
 
 interface CoachReportPanelProps {
     hardData: UserHardData | null;
     decision: DecisionResult | null;
+    onAnalyze?: (activityId: number) => void;
 }
 
-export default function CoachReportPanel({ hardData, decision }: CoachReportPanelProps) {
+export default function CoachReportPanel({ hardData, decision, onAnalyze }: CoachReportPanelProps) {
     const { profile } = useStravaProfile();
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
+            // 安全修復 2: 驗證訊息來源 (Origin Check)
+            // 僅允許來自信任的 n8n webhook 來源
+            const trustedOrigins = ['https://n8n.criterium.tw'];
+            if (!trustedOrigins.includes(event.origin)) {
+                console.warn('收到來自不信任來源的訊息:', event.origin);
+                return;
+            }
+
             if (event.data?.type === 'STRAVA_AUTH_SUCCESS') {
                 const { athlete } = event.data;
                 console.log('收到 Strava 授權成功訊息:', athlete);
@@ -46,6 +56,54 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
         );
     };
 
+    const { activities } = useStravaActivities();
+    const [syncingId, setSyncingId] = useState<number | null>(null);
+
+    const handleSync = async (activity: StravaActivity) => {
+        if (syncingId || loadingActivities) return;
+        const activityId = Number(activity.id);
+        setSyncingId(activityId);
+
+        try {
+            const athleteStr = localStorage.getItem('strava_athlete');
+
+            // 安全修復 4: 移除硬編碼 ID，若無 ID 應要求重新授權
+            if (!athleteStr) {
+                throw new Error('請先連結 Strava 帳號再進行同步');
+            }
+            const ownerId = JSON.parse(athleteStr).id;
+
+            const payload = {
+                object_id: activityId,
+                owner_id: ownerId,
+                aspect_type: "create",
+                object_type: "activity"
+            };
+
+            // 改為呼叫本地後端代理
+            const response = await fetch('/api/v1/strava/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || '同步失敗');
+            }
+
+            // 觸發重新抓取活動，更新同步狀態
+            window.dispatchEvent(new CustomEvent('strava-token-update'));
+        } catch (err) {
+            console.error('Sync failed:', err);
+            alert(err instanceof Error ? err.message : '同步發生錯誤，請稍後再試');
+        } finally {
+            setSyncingId(null);
+        }
+    };
+
+    const { loading: loadingActivities } = useStravaActivities();
+
     // Helper to determine fatigue color
     const getTsbColor = (tsb: number) => {
         if (tsb > 20) return 'text-emerald-400';
@@ -62,7 +120,7 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
     };
 
     return (
-        <div className="h-full flex flex-col bg-zinc-900/50 p-6 space-y-8 overflow-y-auto">
+        <div className="h-full flex flex-col bg-surface/40 backdrop-blur-xl p-6 space-y-8 overflow-y-auto border-r border-white/5">
             {/* Header / Profile */}
             <div className="flex items-center gap-4 border-b border-zinc-800 pb-6">
                 <div className="relative">
@@ -74,9 +132,9 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                         )}
                     </div>
                     {profile && (
-                        <div className="absolute -bottom-1 -right-1 bg-[#FC4C02] rounded-full p-1 border-2 border-zinc-900">
+                        <div className="absolute -bottom-1 -right-1 bg-strava rounded-full p-1 border-2 border-surface shadow-lg">
                             <svg className="w-3 h-3 text-white fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.477 0l-4.91 9.775h4.172z"/>
+                                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.477 0l-4.91 9.775h4.172z" />
                             </svg>
                         </div>
                     )}
@@ -86,16 +144,17 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                         {profile ? `${profile.firstname} ${profile.lastname}` : '訪客運動員'}
                     </h2>
                     <div className="flex items-center gap-2">
-                         {profile ? (
-                            <span className="text-[10px] font-bold text-[#FC4C02] tracking-wider uppercase">STRAVA CONNECTED</span>
-                         ) : (
-                            <button 
+                        {profile ? (
+                            <span className="text-[10px] font-bold text-strava tracking-wider uppercase">STRAVA CONNECTED</span>
+                        ) : (
+                            <button
                                 onClick={handleConnect}
-                                className="px-3 py-1 bg-[#FC4C02] hover:bg-[#E34402] text-white text-xs font-bold rounded transition-colors flex items-center gap-1"
+                                className="px-3 py-1.5 bg-strava hover:bg-strava/90 text-white text-xs font-bold rounded-lg transition-all hover:scale-105 active:scale-95 shadow-lg shadow-strava/20 flex items-center gap-1 cursor-pointer"
+                                aria-label="連結 Strava 帳號"
                             >
                                 連結 Strava
                             </button>
-                         )}
+                        )}
                     </div>
                 </div>
             </div>
@@ -103,42 +162,50 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
             {/* Key Metrics Grid */}
             <div className="grid grid-cols-2 gap-4">
                 {/* FTP */}
-                <div 
+                <div
                     onClick={() => {
                         const currentFtp = hardData?.ftp || 200;
                         const newFtp = window.prompt('請輸入新的 FTP (瓦數):', currentFtp.toString());
+
+                        // 安全修復 5: 加入數值有效性與範圍驗證 (50W - 600W)
                         if (newFtp && !isNaN(Number(newFtp))) {
+                            const ftpNum = Number(newFtp);
+                            if (ftpNum < 50 || ftpNum > 600) {
+                                alert('請輸入合理的 FTP 數值 (50 - 600)');
+                                return;
+                            }
                             localStorage.setItem('user_ftp', newFtp);
                             window.dispatchEvent(new Event('user-ftp-update'));
                         }
                     }}
-                    className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 relative group hover:border-emerald-500/50 transition-all cursor-pointer hover:bg-zinc-900/50"
+                    className="bg-surface/50 border border-white/5 rounded-2xl p-4 relative group hover:border-primary/50 transition-all cursor-pointer hover:bg-surface hover:shadow-glass active:scale-[0.98]"
                     title="點擊修改 FTP"
+                    aria-label="修改功能性閾值功率"
                 >
-                    <div className="absolute top-4 right-4 p-1.5 bg-zinc-900 rounded-lg group-hover:bg-emerald-500/20 transition-colors">
-                        <Zap className="w-4 h-4 text-yellow-500 group-hover:text-emerald-400" />
+                    <div className="absolute top-4 right-4 p-1.5 bg-white/5 rounded-xl group-hover:bg-primary/20 transition-colors">
+                        <Zap className="w-4 h-4 text-blue-400 group-hover:text-primary animate-pulse-slow" />
                     </div>
-                    <p className="text-xs text-zinc-500 mb-1 group-hover:text-zinc-300">功能性閾值功率 (FTP)</p>
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-dr-muted mb-1 group-hover:text-primary transition-colors">FTP</p>
                     <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-display font-bold text-white group-hover:text-emerald-400 transition-colors">
+                        <span className="text-2xl font-display font-bold text-white group-hover:text-primary transition-colors">
                             {hardData?.ftp || '--'}
                         </span>
-                        <span className="text-xs text-zinc-500 font-mono">W</span>
+                        <span className="text-xs text-dr-muted font-mono">W</span>
                     </div>
                 </div>
 
                 {/* TSB (Form) */}
-                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 relative group hover:border-zinc-700 transition-colors">
-                    <div className="absolute top-4 right-4 p-1.5 bg-zinc-900 rounded-lg">
-                        <Battery className={`w-4 h-4 ${hardData ? getTsbColor(hardData.tsb) : 'text-zinc-500'}`} />
+                <div className="bg-surface/50 border border-white/5 rounded-2xl p-4 relative group hover:border-white/20 transition-all cursor-default">
+                    <div className="absolute top-4 right-4 p-1.5 bg-white/5 rounded-xl">
+                        <Battery className={`w-4 h-4 ${hardData ? getTsbColor(hardData.tsb) : 'text-dr-muted'}`} />
                     </div>
-                    <p className="text-xs text-zinc-500 mb-1">體能狀態 (TSB)</p>
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-dr-muted mb-1">TSB</p>
                     <div className="flex items-baseline gap-1">
-                        <span className={`text-2xl font-display font-bold ${hardData ? getTsbColor(hardData.tsb) : 'text-zinc-500'}`}>
+                        <span className={`text-2xl font-display font-bold ${hardData ? getTsbColor(hardData.tsb) : 'text-dr-muted'}`}>
                             {hardData?.tsb ?? '--'}
                         </span>
                     </div>
-                    <p className="text-[10px] text-zinc-500 mt-1">{hardData ? getTsbLabel(hardData.tsb) : '無數據'}</p>
+                    <p className="text-[10px] text-dr-muted mt-1 font-medium">{hardData ? getTsbLabel(hardData.tsb) : '無數據'}</p>
                 </div>
             </div>
 
@@ -147,25 +214,23 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                 {/* Suffer Score */}
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 relative group hover:border-zinc-700 transition-colors">
                     <div className="absolute top-4 right-4 p-1.5 bg-zinc-900 rounded-lg">
-                        <Activity className={`w-4 h-4 ${
-                            (hardData?.sufferScore ?? 0) > 100 ? 'text-red-500' : 
-                            (hardData?.sufferScore ?? 0) > 50 ? 'text-amber-500' : 
-                            'text-emerald-500'
-                        }`} />
+                        <Activity className={`w-4 h-4 ${(hardData?.sufferScore ?? 0) > 100 ? 'text-red-500' :
+                            (hardData?.sufferScore ?? 0) > 50 ? 'text-amber-500' :
+                                'text-emerald-500'
+                            }`} />
                     </div>
                     <p className="text-xs text-zinc-500 mb-1">相對耗力 (Suffer)</p>
                     <div className="flex items-baseline gap-1">
-                        <span className={`text-2xl font-display font-bold ${
-                            (hardData?.sufferScore ?? 0) > 100 ? 'text-red-500' : 
-                            (hardData?.sufferScore ?? 0) > 50 ? 'text-amber-500' : 
-                            'text-emerald-500'
-                        }`}>
+                        <span className={`text-2xl font-display font-bold ${(hardData?.sufferScore ?? 0) > 100 ? 'text-red-500' :
+                            (hardData?.sufferScore ?? 0) > 50 ? 'text-amber-500' :
+                                'text-emerald-500'
+                            }`}>
                             {hardData?.sufferScore ?? '--'}
                         </span>
                     </div>
                     <p className="text-[10px] text-zinc-500 mt-1">
-                        {(hardData?.sufferScore ?? 0) > 100 ? '極艱苦' : 
-                         (hardData?.sufferScore ?? 0) > 50 ? '艱苦' : '輕鬆'}
+                        {(hardData?.sufferScore ?? 0) > 100 ? '極艱苦' :
+                            (hardData?.sufferScore ?? 0) > 50 ? '艱苦' : '輕鬆'}
                     </p>
                 </div>
 
@@ -216,8 +281,8 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                         <span className="text-xs text-zinc-500 font-mono">bpm</span>
                     </div>
                     <p className="text-[10px] text-zinc-500 mt-1">
-                        {hardData?.avgHeartRate && hardData?.maxHeartRate 
-                            ? `${Math.round((hardData.avgHeartRate / hardData.maxHeartRate) * 100)}% 最大心率` 
+                        {hardData?.avgHeartRate && hardData?.maxHeartRate
+                            ? `${Math.round((hardData.avgHeartRate / hardData.maxHeartRate) * 100)}% 最大心率`
                             : '--'}
                     </p>
                 </div>
@@ -236,23 +301,23 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                         </span>
                     )}
                 </div>
-                
-                <div className="bg-zinc-950 rounded-xl border border-zinc-800 p-5">
+
+                <div className="bg-surface/50 rounded-2xl border border-white/5 p-5 shadow-inner">
                     <div className="flex justify-between items-end mb-2">
-                        <span className="text-xs text-zinc-500">訓練壓力指數 (TSS)</span>
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-dr-muted">TSS</span>
                         <span className="text-xl font-display font-bold text-white">{hardData?.yesterdayTss || 0}</span>
                     </div>
                     {/* Visual Bar for TSS (0-300 range approximate) */}
-                    <div className="w-full h-2 bg-zinc-900 rounded-full overflow-hidden">
-                        <div 
-                            className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-1000"
+                    <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-gradient-to-r from-primary to-blue-400 rounded-full transition-all duration-1000"
                             style={{ width: `${Math.min(((hardData?.yesterdayTss || 0) / 300) * 100, 100)}%` }}
                         />
                     </div>
-                    <div className="flex justify-between mt-1.5 text-[10px] text-zinc-600 font-mono">
-                        <span>恢復</span>
-                        <span>訓練</span>
-                        <span>超負荷</span>
+                    <div className="flex justify-between mt-1.5 text-[10px] text-dr-muted font-bold tracking-tighter uppercase">
+                        <span>Rest</span>
+                        <span>Train</span>
+                        <span>Overload</span>
                     </div>
                 </div>
             </div>
@@ -284,7 +349,7 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
                     </div>
                 )}
             </div>
-            
+
             {/* System Status / Footer */}
             <div className="mt-auto pt-6 border-t border-zinc-800/30">
                 <div className="flex justify-between items-center text-[10px] text-zinc-600 font-mono">
@@ -297,37 +362,72 @@ export default function CoachReportPanel({ hardData, decision }: CoachReportPane
             </div>
             {/* Recent Activities List */}
             <div className="pt-2 border-t border-zinc-800">
-                <h3 className="text-sm text-zinc-400 font-medium mb-3">近期活動 (過去30天)</h3>
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm text-zinc-400 font-medium">近期活動 (過去30天)</h3>
+                    {loadingActivities && <RefreshCw className="w-3 h-3 text-dr-muted animate-spin" />}
+                </div>
                 <div className="space-y-2">
-                    {hardData?.recentActivities?.slice(0, 5).map((activity: StravaActivity) => {
-                         const actPower = activity.weighted_average_watts || activity.average_watts || 0;
-                         const actFtp = hardData.ftp || 200;
-                         const actIf = actPower / actFtp;
-                         const actMovingTime = activity.moving_time || 0;
-                         const actTss = Math.round((actMovingTime * actPower * actIf) / (actFtp * 3600) * 100);
+                    {activities.slice(0, 10).map((activity) => {
+                        const actPower = activity.average_watts || 0;
+                        const actFtp = hardData?.ftp || 200;
+                        const actIf = actPower / actFtp;
+                        const actMovingTime = activity.moving_time || 0;
+                        const actTss = Math.round((actMovingTime * actPower * actIf) / (actFtp * 3600) * 100);
+                        const isSynced = activity.isSynced;
+                        const isSyncing = syncingId === Number(activity.id);
 
                         return (
-                            <div key={activity.id} className="bg-zinc-950/50 border border-zinc-900 rounded-lg p-3 hover:bg-zinc-900 transition-colors">
+                            <div key={activity.id} className="group bg-zinc-950/50 border border-zinc-900 rounded-lg p-3 hover:bg-zinc-900 transition-all relative overflow-hidden">
                                 <div className="flex justify-between items-start mb-1">
-                                    <span className="text-zinc-200 font-medium text-sm truncate max-w-[70%]">{activity.name}</span>
-                                    <span className="text-zinc-500 text-xs">
-                                        {new Date(activity.start_date_local).toLocaleDateString()}
-                                    </span>
+                                    <span className="text-zinc-200 font-medium text-sm truncate max-w-[65%]">{activity.name}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-zinc-500 text-[10px] font-mono whitespace-nowrap">
+                                            {new Date(activity.start_date_local).toLocaleDateString()}
+                                        </span>
+                                        {isSynced ? (
+                                            <button
+                                                onClick={() => onAnalyze && onAnalyze(activity.id as number)}
+                                                className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded text-[10px] font-medium transition-colors border border-emerald-500/20"
+                                                title="點擊進行 AI 詳細分析"
+                                            >
+                                                <CheckCircle2 className="w-3 h-3" />
+                                                <span>已同步</span>
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleSync(activity as unknown as StravaActivity)}
+                                                disabled={isSyncing}
+                                                className={`p-1 rounded-md transition-all active:scale-90 ${isSyncing ? 'bg-zinc-800' : 'hover:bg-primary/20 hover:text-primary text-dr-muted cursor-pointer'}`}
+                                                title="同步此活動至 TCU"
+                                            >
+                                                {isSyncing ? (
+                                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                                ) : (
+                                                    <UploadCloud className="w-3.5 h-3.5 group-hover:animate-pulse" />
+                                                )}
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-3 text-xs text-zinc-400">
-                                    <span>{(activity.distance / 1000).toFixed(1)} km</span>
-                                    <span>•</span>
-                                    <span>{Math.floor(activity.moving_time / 60)} min</span>
-                                    <span>•</span>
-                                    <span className={actTss > 80 ? 'text-amber-500' : 'text-emerald-500'}>
+                                <div className="flex items-center gap-3 text-[11px] text-zinc-500">
+                                    <span className="flex items-center gap-1 font-mono">
+                                        {(activity.distance / 1000).toFixed(1)} <span className="text-[9px] opacity-60">km</span>
+                                    </span>
+                                    <span className="opacity-30">•</span>
+                                    <span className="flex items-center gap-1 font-mono">
+                                        {Math.floor(activity.moving_time / 60)} <span className="text-[9px] opacity-60">min</span>
+                                    </span>
+                                    <span className="opacity-30">•</span>
+                                    <span className={`font-mono font-bold ${actTss > 80 ? 'text-amber-500/80' : 'text-emerald-500/80'}`}>
                                         TSS {actTss > 0 ? actTss : '--'}
                                     </span>
                                 </div>
+                                {isSyncing && <div className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/30 animate-pulse" />}
                             </div>
                         );
                     })}
-                    {(!hardData?.recentActivities || hardData.recentActivities.length === 0) && (
-                        <div className="text-center py-4 text-zinc-600 text-xs">
+                    {(!loadingActivities && activities.length === 0) && (
+                        <div className="text-center py-6 text-zinc-600 text-xs border border-dashed border-zinc-800 rounded-lg">
                             無近期活動紀錄
                         </div>
                     )}

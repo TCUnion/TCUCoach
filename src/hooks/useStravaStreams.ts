@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import { StravaStream } from '../lib/drTcu/streamAnalyzer';
 
 interface UseStravaStreamsResult {
@@ -27,18 +26,19 @@ export function useStravaStreams(activityId: number | string | null): UseStravaS
             setLoading(true);
             setError(null);
             try {
-                // Determine if we need to search by BigInt or string
-                // The DB column is BIGINT, Supabase JS handles it well, but let's be safe
-                const { data, error: sbError } = await supabase
-                    .from('strava_streams')
-                    .select('streams')
-                    .eq('activity_id', activityId)
-                    .single();
+                const response = await fetch(`/api/v1/db/streams/${activityId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('strava_access_token') || ''}`
+                    }
+                });
 
-                if (sbError) throw sbError;
+                if (!response.ok) {
+                    throw new Error('Failed to fetch streams');
+                }
+
+                const data = await response.json();
 
                 if (data && data.streams) {
-                    // The raw JSONB in Supabase is already stored as StravaStream[] by n8n
                     setStreams(data.streams as StravaStream[]);
                 } else {
                     setStreams(null);
