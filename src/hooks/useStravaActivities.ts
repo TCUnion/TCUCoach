@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 
 export interface StravaActivitySummary {
     id: number; // Strava ID (BigInt in DB/Zeabur)
@@ -38,44 +37,24 @@ export function useStravaActivities() {
                 return;
             }
 
-            const fifteenDaysAgo = new Date();
-            fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
-            const dateLimit = fifteenDaysAgo.toISOString();
-
             try {
-                // 1. Fetch activities
-                const { data: activityData, error: activityError } = await supabase
-                    .from('strava_activities')
-                    .select('id, name, start_date_local, distance, moving_time, total_elevation_gain, average_watts')
-                    .eq('athlete_id', athleteId)
-                    .gte('start_date_local', dateLimit)
-                    .order('start_date_local', { ascending: false })
-                    .limit(10);
-
-                if (activityError) throw activityError;
-
-                if (activityData && activityData.length > 0) {
-                    // 2. Check which ones have streams (already synced)
-                    const activityIds = activityData.map(a => a.id);
-                    const { data: streamData, error: streamError } = await supabase
-                        .from('strava_streams')
-                        .select('activity_id')
-                        .in('activity_id', activityIds);
-
-                    if (streamError) {
-                        console.error('Error fetching stream status:', streamError);
-                        // Don't fail the whole fetch, just assume none synced
-                        setActivities(activityData.map(a => ({ ...a, isSynced: false })));
-                    } else {
-                        const syncedIds = new Set(streamData?.map(s => s.activity_id) || []);
-                        setActivities(activityData.map(a => ({
-                            ...a,
-                            isSynced: syncedIds.has(a.id)
-                        })));
+                // Use Backend API Proxy (Secure)
+                // Pass athlete_id. Backend should ideally verify this with a token, 
+                // but for now it acts as a secure gateway compared to direct DB access.
+                const response = await fetch(`/api/v1/db/activities?athlete_id=${athleteId}`, {
+                    headers: {
+                        // Pass token if we had one implemented for backend auth verification
+                        'Authorization': `Bearer ${localStorage.getItem('strava_access_token') || ''}`
                     }
-                } else {
-                    setActivities([]);
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch activities');
                 }
+
+                const data: StravaActivitySummary[] = await response.json();
+                setActivities(data);
+
             } catch (err: unknown) {
                 console.error('Error fetching activities:', err);
                 setError(err instanceof Error ? err.message : 'Unknown error');

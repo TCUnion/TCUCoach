@@ -1,0 +1,91 @@
+{
+  "name": "Strava API Quota Check",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1db1f478-439f-4316-92f7-020867824c08",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.strava.com/api/v3/athlete",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "e6f47703-9cd3-41c0-aa1e-08964724aab3",
+      "name": "Get Athlete Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_STRAVA_CREDENTIAL_ID",
+          "name": "Strava API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract Rate Limit Headers\nconst headers = items[0].json.headers;\n\n// Headers usually look like \"17,321\" for usage and \"100,1000\" for limits\n// The order is usually 15-minute, Daily\n\nconst usageHeader = headers['x-readratelimit-usage'] || '0,0';\nconst limitHeader = headers['x-readratelimit-limit'] || '0,0';\n\nconst [usage15Min, usageDaily] = usageHeader.split(',').map(Number);\nconst [limit15Min, limitDaily] = limitHeader.split(',').map(Number);\n\nreturn [\n  {\n    json: {\n      usage_15_min: usage15Min || 0,\n      usage_daily: usageDaily || 0,\n      limit_15_min: limit15Min || 0,\n      limit_daily: limitDaily || 0,\n      percentage_15_min: ((usage15Min || 0) / (limit15Min || 1) * 100).toFixed(2) + '%',\n      percentage_daily: ((usageDaily || 0) / (limitDaily || 1) * 100).toFixed(2) + '%',\n      timestamp: new Date().toISOString()\n    }\n  }\n];"
+      },
+      "id": "4b32103f-8547-4921-9960-00e97864303d",
+      "name": "Extract Quota",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Get Athlete Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Athlete Profile": {
+      "main": [
+        [
+          {
+            "node": "Extract Quota",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "6f2b0f3e-5b1a-4c9f-8e2d-3a4b5c6d7e8f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8a32b12c9d8e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f",
+    "description": "Checks Strava API Rate Limits"
+  },
+  "tags": []
+}

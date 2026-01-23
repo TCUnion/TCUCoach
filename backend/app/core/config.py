@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     # PROJECT_NAME=TCUCoach_API (in env)
     STRAVA_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/strava/callback"
 
+    # Supabase
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_KEY: str = ""
+    SUPABASE_ANON_KEY: str = "" # Optional, if needed
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

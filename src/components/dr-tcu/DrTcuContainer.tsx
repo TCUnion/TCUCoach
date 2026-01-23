@@ -10,7 +10,7 @@ import ResultCard from './ResultCard';
 import CoachReportPanel from './CoachReportPanel';
 
 export default function DrTcuContainer() {
-    const { messages, flowState, handleIngestion, handleDiagnostic, workout, hardData, decision } = useDrTcu();
+    const { messages, flowState, handleSend: handleIngestion, handleDiagnostic, workout, hardData, decision, analyzeActivity } = useDrTcu();
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
@@ -40,7 +40,7 @@ export default function DrTcuContainer() {
         <div className="w-full max-w-7xl mx-auto lg:h-[85vh] h-auto grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 p-2 lg:p-0">
             {/* Left Panel: Professional Report (4 cols) */}
             <div className="lg:col-span-4 lg:h-full bg-surface shadow-glass rounded-2xl lg:rounded-3xl border border-white/5 overflow-hidden order-2 lg:order-1 transition-all duration-500 hover:shadow-glass-hover">
-                <CoachReportPanel hardData={hardData} decision={decision} />
+                <CoachReportPanel hardData={hardData} decision={decision} onAnalyze={analyzeActivity} />
             </div>
 
             {/* Right Panel: AI Chat Interface (8 cols) */}
