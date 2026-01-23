@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface QuotaData {
     usage15Min: number;
@@ -26,13 +26,13 @@ export function StravaQuotaDisplay() {
                 });
 
                 if (!response.ok) {
-                   // If unauthorized, token might be expired.
-                   // But we still might get headers? Usually not if 401.
-                   if (response.status === 401) {
-                       throw new Error("Unauthorized - Token may be expired");
-                   }
+                    // If unauthorized, token might be expired.
+                    // But we still might get headers? Usually not if 401.
+                    if (response.status === 401) {
+                        throw new Error("Unauthorized - Token may be expired");
+                    }
                 }
-                
+
                 // Inspect Headers
                 // Note: This requires CORS to expose these headers.
                 // Strava might NOT expose 'X-ReadRateLimit-Usage' to CORS requests from browsers.
@@ -72,9 +72,9 @@ export function StravaQuotaDisplay() {
     return (
         <div className="p-4 bg-white dark:bg-zinc-800 rounded-lg shadow space-y-2 text-sm">
             <h3 className="font-bold text-gray-700 dark:text-gray-200">Strava API 額度狀態</h3>
-            
+
             {loading && <p>讀取中...</p>}
-            
+
             {error && (
                 <div className="text-red-500 text-xs">
                     {error}
@@ -91,27 +91,27 @@ export function StravaQuotaDisplay() {
                             </span>
                             <span className="text-gray-400">/ {quota.limit15Min}</span>
                         </div>
-                         <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 dark:bg-gray-700">
-                             <div 
-                                className={`h-1.5 rounded-full ${quota.usage15Min > quota.limit15Min * 0.9 ? 'bg-red-500' : 'bg-green-500'}`} 
+                        <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 dark:bg-gray-700">
+                            <div
+                                className={`h-1.5 rounded-full ${quota.usage15Min > quota.limit15Min * 0.9 ? 'bg-red-500' : 'bg-green-500'}`}
                                 style={{ width: `${Math.min((quota.usage15Min / quota.limit15Min) * 100, 100)}%` }}>
-                             </div>
+                            </div>
                         </div>
                     </div>
 
                     <div className="flex flex-col">
                         <span className="text-xs text-gray-500">每日限制</span>
                         <div className="flex items-end gap-1">
-                             <span className={`text-lg font-bold ${quota.usageDaily > quota.limitDaily * 0.9 ? 'text-red-500' : 'text-green-500'}`}>
+                            <span className={`text-lg font-bold ${quota.usageDaily > quota.limitDaily * 0.9 ? 'text-red-500' : 'text-green-500'}`}>
                                 {quota.usageDaily}
                             </span>
                             <span className="text-gray-400">/ {quota.limitDaily}</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 dark:bg-gray-700">
-                             <div 
-                                className={`h-1.5 rounded-full ${quota.usageDaily > quota.limitDaily * 0.9 ? 'bg-red-500' : 'bg-green-500'}`} 
+                            <div
+                                className={`h-1.5 rounded-full ${quota.usageDaily > quota.limitDaily * 0.9 ? 'bg-red-500' : 'bg-green-500'}`}
                                 style={{ width: `${Math.min((quota.usageDaily / quota.limitDaily) * 100, 100)}%` }}>
-                             </div>
+                            </div>
                         </div>
                     </div>
                 </div>
