@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config';
 
 export interface StravaActivitySummary {
     id: number; // Strava ID (BigInt in DB/Zeabur)
@@ -41,7 +42,9 @@ export function useStravaActivities() {
                 // Use Backend API Proxy (Secure)
                 // Pass athlete_id. Backend should ideally verify this with a token, 
                 // but for now it acts as a secure gateway compared to direct DB access.
-                const response = await fetch(`/api/v1/db/activities?athlete_id=${athleteId}`, {
+                // Use Backend API Proxy (Secure) or Direct URL
+                // Pass athlete_id. Backend should ideally verify this with a token
+                const response = await fetch(`${API_BASE_URL}/api/v1/db/activities?athlete_id=${athleteId}`, {
                     headers: {
                         // Pass token if we had one implemented for backend auth verification
                         'Authorization': `Bearer ${localStorage.getItem('strava_access_token') || ''}`

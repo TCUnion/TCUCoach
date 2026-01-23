@@ -152,3 +152,83 @@ async def get_latest_activity(
     except Exception as e:
         print(f"Error fetching latest activity: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/activities/{activity_id}/analysis")
+async def get_activity_analysis(
+    activity_id: int,
+    athlete_id: int = Query(..., description="The Strava Athlete ID"),
+    authorization: str = Header(None)
+):
+    """
+    Fetch a specific activity with full details: bike, streams, etc.
+    """
+    if not supabase_client:
+        raise HTTPException(status_code=503, detail="Database connection unavailable")
+
+    try:
+        # 1. Fetch activity by ID
+        response = supabase_client.table('strava_activities')\
+            .select('id, athlete_id, name, moving_time, average_watts, weighted_average_watts, start_date, start_date_local, gear_id, device_name, average_heartrate, max_heartrate, average_temp, distance, total_elevation_gain, suffer_score, kilojoules')\
+            .eq('id', activity_id)\
+            .eq('athlete_id', athlete_id)\
+            .maybe_single()\
+            .execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Activity not found")
+        
+        activity = response.data
+        
+        # 2. Fetch Bike Name
+        bike_name = '未知單車'
+        if activity.get('gear_id'):
+            bike_resp = supabase_client.table('bikes')\
+                .select('name')\
+                .eq('id', activity['gear_id'])\
+                .maybe_single()\
+                .execute()
+            if bike_resp.data:
+                bike_name = bike_resp.data['name']
+        
+        activity['bike_name'] = bike_name
+
+        # 3. Fetch Streams
+        streams_resp = supabase_client.table('strava_streams')\
+            .select('streams')\
+            .eq('activity_id', activity['id'])\
+            .maybe_single()\
+            .execute()
+        
+        activity['streams'] = streams_resp.data['streams'] if streams_resp and streams_resp.data else None
+
+        # 3.1 If streams missing and token present, try to sync (Server-side Proxy fetch)
+        if not activity['streams'] and authorization:
+            try:
+                token = authorization.replace("Bearer ", "")
+                async with httpx.AsyncClient() as client:
+                    strava_resp = await client.get(
+                        f"https://www.strava.com/api/v3/activities/{activity['id']}/streams?keys=time,distance,latlng,altitude,velocity_smooth,heartrate,cadence,watts,temp,moving,grade_smooth&key_by_type=true",
+                        headers={"Authorization": f"Bearer {token}"}
+                    )
+                    if strava_resp.status_code == 200:
+                        raw_streams = strava_resp.json()
+                        streams_array = [{"type": k, **v} for k, v in raw_streams.items()]
+                        
+                        # Save to DB (Server-side)
+                        supabase_client.table('strava_streams').upsert({
+                            "activity_id": activity['id'],
+                            "streams": streams_array
+                        }).execute()
+                        
+                        activity['streams'] = streams_array
+            except Exception as sync_err:
+                print(f"Server-side stream sync failed: {sync_err}")
+
+        return activity
+
+    except Exception as e:
+        print(f"Error fetching activity {activity_id}: {e}")
+        # Re-raise HTTP exceptions
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=str(e))

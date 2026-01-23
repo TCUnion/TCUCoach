@@ -3,6 +3,7 @@ import { UserHardData, UserSubjectiveData, ChatMessage, DailyWorkout, DecisionRe
 import { decideTraining } from '../drTcu/decisionEngine';
 import { generateWorkout } from '../drTcu/workoutGenerator';
 import { analyzeStreams, getZoneDistribution, StravaStream } from '../drTcu/streamAnalyzer';
+import { API_BASE_URL } from '../../config';
 
 export type FlowState = 'INGESTION' | 'DIAGNOSTIC' | 'PRESCRIPTION';
 
@@ -74,8 +75,8 @@ export function useDrTcu() {
             }
 
             const endpoint = activityId
-                ? `/api/v1/db/activities/${activityId}/analysis?athlete_id=${athleteId}`
-                : `/api/v1/db/activities/latest?athlete_id=${athleteId}`;
+                ? `${API_BASE_URL}/api/v1/db/activities/${activityId}/analysis?athlete_id=${athleteId}`
+                : `${API_BASE_URL}/api/v1/db/activities/latest?athlete_id=${athleteId}`;
 
             addMessage('assistant', `正在分析${activityId ? '指定的' : '最新'}活動數據...`);
 
