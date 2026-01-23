@@ -57,7 +57,7 @@ export default function CoachReportPanel({ hardData, decision, onAnalyze }: Coac
         );
     };
 
-    const { activities } = useStravaActivities();
+    const { activities, loading: loadingActivities } = useStravaActivities();
     const [syncingId, setSyncingId] = useState<number | null>(null);
     const [isFtpModalOpen, setIsFtpModalOpen] = useState(false);
 
@@ -109,7 +109,6 @@ export default function CoachReportPanel({ hardData, decision, onAnalyze }: Coac
         }
     };
 
-    const { loading: loadingActivities } = useStravaActivities();
 
     // Helper to determine fatigue color
     const getTsbColor = (tsb: number) => {

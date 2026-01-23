@@ -93,7 +93,7 @@ export function useDrTcu() {
             if (activity) {
                 // 2. Parsed Data Logic
                 const bikeName = activity.bike_name || '未知單車';
-                 
+
                 console.log('Bike:', bikeName);
                 const power = activity.weighted_average_watts || activity.average_watts || 150;
 
@@ -184,6 +184,7 @@ export function useDrTcu() {
             analyzeActivity().finally(() => {
                 isFetchingRef.current = false;
             });
+
         }
     }, [hasToken, flowState, hardData, analyzeActivity]);
 

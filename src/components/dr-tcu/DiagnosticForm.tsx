@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserSubjectiveData } from '../../types/coach';
+import { useStravaActivities, StravaActivitySummary } from '../../hooks/useStravaActivities';
 
 interface DiagnosticFormProps {
     onSubmit: (data: UserSubjectiveData) => void;
@@ -119,6 +120,107 @@ export default function DiagnosticForm({ onSubmit }: DiagnosticFormProps) {
             >
                 提交今日數據
             </button>
-        </form>
+
+            <ManualSyncSection />
+        </form >
+    );
+}
+
+function ManualSyncSection() {
+    const [activityId, setActivityId] = useState('');
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const { activities, loading } = useStravaActivities();
+
+    const handleSync = async () => {
+        if (!activityId) return;
+        setStatus('loading');
+        try {
+            // 從 localStorage 取得 athlete (owner_id)
+            const athleteStr = localStorage.getItem('strava_athlete');
+            const ownerId = athleteStr ? JSON.parse(athleteStr).id : 96603889; // Fallback to provided owner_id if missing
+
+            const payload = {
+                aspect_type: "create",
+                event_time: Math.floor(Date.now() / 1000),
+                object_id: Number(activityId),
+                object_type: "activity",
+                owner_id: ownerId,
+                subscription_id: 123456, // Dummy ID
+                updates: {}
+            };
+
+            await fetch('https://n8n.criterium.tw/webhook/strava-activity-webhook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            setStatus('success');
+            setTimeout(() => setStatus('idle'), 3000);
+            setActivityId('');
+
+            // 觸發重新抓取活動，更新同步狀態
+            window.dispatchEvent(new CustomEvent('strava-token-update'));
+        } catch (err) {
+            console.error(err);
+            setStatus('error');
+            setTimeout(() => setStatus('idle'), 3000);
+        }
+    };
+
+    return (
+        <div className="pt-6 mt-6 border-t border-zinc-800">
+            <h4 className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-3">手動同步 Strava 活動</h4>
+
+            {/* 狀態通知 */}
+            {status !== 'idle' && (
+                <div className={`mb-3 p-2 rounded text-xs border animate-in fade-in slide-in-from-top-1 ${status === 'loading' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' :
+                    status === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
+                        'bg-red-500/10 border-red-500/30 text-red-400'
+                    }`}>
+                    {status === 'loading' ? '正在同步活動，請稍候...' :
+                        status === 'success' ? '同步請求已發送！請稍後查看數據變動。' :
+                            '同步失敗，請檢查網路連線。'}
+                </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+                <select
+                    value={activityId}
+                    onChange={(e) => setActivityId(e.target.value)}
+                    disabled={loading || status === 'loading'}
+                    className="w-full bg-black/30 border border-zinc-700 rounded text-sm px-3 py-2 text-zinc-300 focus:border-emerald-500 focus:outline-none appearance-none truncate disabled:opacity-50"
+                >
+                    <option value="">{loading ? "載入中..." : "選擇最近活動..."}</option>
+                    {activities.map((act: StravaActivitySummary) => (
+                        <option
+                            key={act.id}
+                            value={act.id}
+                            disabled={act.isSynced}
+                            className={act.isSynced ? 'text-zinc-500 italic' : 'text-zinc-200'}
+                        >
+                            {new Date(act.start_date_local).toLocaleDateString()} - {act.name} {act.isSynced ? '(已上傳)' : ''}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    type="button"
+                    onClick={handleSync}
+                    disabled={!activityId || status === 'loading'}
+                    className={`w-full px-3 py-2 rounded text-sm font-medium transition-colors ${status === 'loading' ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' :
+                        status === 'success' ? 'bg-emerald-600 text-white' :
+                            status === 'error' ? 'bg-red-600 text-white' :
+                                'bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700 hover:bg-zinc-700'
+                        }`}
+                >
+                    {status === 'loading' ? '處理中...' :
+                        status === 'success' ? '發送成功' :
+                            status === 'error' ? '重試同步' : '同步所選活動'}
+                </button>
+            </div>
+            <p className="text-[10px] text-zinc-600 mt-2">
+                * 若數據未更新，請選擇活動並點擊同步以觸發重新分析。
+            </p>
+        </div>
     );
 }
