@@ -1,5 +1,6 @@
-import { Activity, Battery, CheckCircle2, UploadCloud, RefreshCw, TrendingUp, User, Zap } from 'lucide-react';
+import { Activity, Battery, CheckCircle2, UploadCloud, RefreshCw, TrendingUp, User, Zap, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { UserHardData, DecisionResult, StravaActivity } from '../../types/coach';
 import { useStravaProfile } from '../../lib/hooks/useStravaProfile';
 import { useStravaActivities } from '../../hooks/useStravaActivities';
@@ -60,6 +61,12 @@ export default function CoachReportPanel({ hardData, decision, onAnalyze }: Coac
     const { activities, loading: loadingActivities } = useStravaActivities();
     const [syncingId, setSyncingId] = useState<number | null>(null);
     const [isFtpModalOpen, setIsFtpModalOpen] = useState(false);
+    const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    const showNotification = (message: string, type: 'success' | 'error') => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification(null), 3000);
+    };
 
     const handleSaveFtp = (ftp: number) => {
         localStorage.setItem('user_ftp', ftp.toString());
@@ -101,9 +108,10 @@ export default function CoachReportPanel({ hardData, decision, onAnalyze }: Coac
 
             // 觸發重新抓取活動，更新同步狀態
             window.dispatchEvent(new CustomEvent('strava-token-update'));
+            showNotification('活動同步成功！', 'success');
         } catch (err) {
             console.error('Sync failed:', err);
-            alert(err instanceof Error ? err.message : '同步發生錯誤，請稍後再試');
+            showNotification(err instanceof Error ? err.message : '同步失敗，請稍後再試', 'error');
         } finally {
             setSyncingId(null);
         }
@@ -432,6 +440,30 @@ export default function CoachReportPanel({ hardData, decision, onAnalyze }: Coac
                 currentFtp={hardData?.ftp || 200}
                 onSave={handleSaveFtp}
             />
+
+            {/* Toast Notification */}
+            <AnimatePresence>
+                {notification && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-2xl shadow-2xl backdrop-blur-md border flex items-center gap-3 min-w-[280px]"
+                        style={{
+                            backgroundColor: notification.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                            borderColor: notification.type === 'success' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)',
+                            color: notification.type === 'success' ? '#10b981' : '#ef4444'
+                        }}
+                    >
+                        {notification.type === 'success' ? (
+                            <CheckCircle2 className="w-5 h-5 shrink-0" />
+                        ) : (
+                            <AlertCircle className="w-5 h-5 shrink-0" />
+                        )}
+                        <span className="text-sm font-medium">{notification.message}</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

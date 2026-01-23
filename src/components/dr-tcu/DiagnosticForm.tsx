@@ -173,50 +173,83 @@ function ManualSyncSection() {
             <h4 className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-3">手動同步 Strava 活動</h4>
 
             {/* 狀態通知 */}
-            {status !== 'idle' && (
-                <div className={`mb-3 p-2 rounded text-xs border animate-in fade-in slide-in-from-top-1 ${status === 'loading' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' :
-                    status === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
-                        'bg-red-500/10 border-red-500/30 text-red-400'
-                    }`}>
-                    {status === 'loading' ? '正在同步活動，請稍候...' :
-                        status === 'success' ? '同步請求已發送！請稍後查看數據變動。' :
-                            '同步失敗，請檢查網路連線。'}
-                </div>
-            )}
+            <AnimatePresence>
+                {status !== 'idle' && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                        animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+                        exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                        className={`overflow-hidden`}
+                    >
+                        <div className={`p-3 rounded-xl text-xs border flex items-center gap-2 ${status === 'loading' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' :
+                            status === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
+                                'bg-red-500/10 border-red-500/30 text-red-400'
+                            }`}>
+                            {status === 'loading' && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                            {status === 'success' && <CheckCircle2 className="w-3.5 h-3.5" />}
+                            <span>
+                                {status === 'loading' ? '正在同步活動，請稍候...' :
+                                    status === 'success' ? '同步請求已發送！請稍後查看數據變動。' :
+                                        '同步失敗，請檢查網路連線。'}
+                            </span>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-            <div className="flex flex-col gap-2">
-                <select
-                    value={activityId}
-                    onChange={(e) => setActivityId(e.target.value)}
-                    disabled={loading || status === 'loading'}
-                    className="w-full bg-black/30 border border-zinc-700 rounded text-sm px-3 py-2 text-zinc-300 focus:border-emerald-500 focus:outline-none appearance-none truncate disabled:opacity-50"
-                >
-                    <option value="">{loading ? "載入中..." : "選擇最近活動..."}</option>
-                    {activities.map((act: StravaActivitySummary) => (
-                        <option
-                            key={act.id}
-                            value={act.id}
-                            disabled={act.isSynced}
-                            className={act.isSynced ? 'text-zinc-500 italic' : 'text-zinc-200'}
-                        >
-                            {new Date(act.start_date_local).toLocaleDateString()} - {act.name} {act.isSynced ? '(已上傳)' : ''}
-                        </option>
-                    ))}
-                </select>
-                <button
+            <div className="flex flex-col gap-2 mt-4">
+                <div className="relative group">
+                    <select
+                        value={activityId}
+                        onChange={(e) => setActivityId(e.target.value)}
+                        disabled={loading || status === 'loading'}
+                        className="w-full bg-black/30 border border-zinc-700 rounded-xl text-sm px-3 py-2.5 text-zinc-300 focus:border-emerald-500 focus:outline-none appearance-none truncate disabled:opacity-50 transition-all hover:border-zinc-500"
+                    >
+                        <option value="">{loading ? "載入中..." : "選擇最近活動..."}</option>
+                        {activities.map((act: StravaActivitySummary) => (
+                            <option
+                                key={act.id}
+                                value={act.id}
+                                disabled={act.isSynced}
+                                className={act.isSynced ? 'text-zinc-500 italic' : 'text-zinc-200'}
+                            >
+                                {new Date(act.start_date_local).toLocaleDateString()} - {act.name} {act.isSynced ? '(已上傳)' : ''}
+                            </option>
+                        ))}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                        <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                        </svg>
+                    </div>
+                </div>
+                <motion.button
+                    whileTap={{ scale: 0.98 }}
                     type="button"
                     onClick={handleSync}
                     disabled={!activityId || status === 'loading'}
-                    className={`w-full px-3 py-2 rounded text-sm font-medium transition-colors ${status === 'loading' ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' :
-                        status === 'success' ? 'bg-emerald-600 text-white' :
-                            status === 'error' ? 'bg-red-600 text-white' :
-                                'bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700 hover:bg-zinc-700'
+                    className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all shadow-lg ${status === 'loading' ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' :
+                        status === 'success' ? 'bg-emerald-600 text-white shadow-emerald-500/20' :
+                            status === 'error' ? 'bg-red-600 text-white shadow-red-500/20' :
+                                'bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700 hover:bg-zinc-700 hover:border-zinc-600 shadow-black/20'
                         }`}
                 >
-                    {status === 'loading' ? '處理中...' :
-                        status === 'success' ? '發送成功' :
-                            status === 'error' ? '重試同步' : '同步所選活動'}
-                </button>
+                    <div className="flex items-center justify-center gap-2">
+                        {status === 'loading' ? (
+                            <>
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                <span>處理中...</span>
+                            </>
+                        ) : status === 'success' ? (
+                            <>
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span>發送成功</span>
+                            </>
+                        ) : (
+                            <span>同步所選活動</span>
+                        )}
+                    </div>
+                </motion.button>
             </div>
             <p className="text-[10px] text-zinc-600 mt-2">
                 * 若數據未更新，請選擇活動並點擊同步以觸發重新分析。
