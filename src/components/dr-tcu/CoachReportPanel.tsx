@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { UserHardData, DecisionResult, StravaActivity } from '../../types/coach';
 import { useStravaProfile } from '../../lib/hooks/useStravaProfile';
 import { useStravaActivities } from '../../hooks/useStravaActivities';
+import FtpModal from './FtpModal';
 
 interface CoachReportPanelProps {
     hardData: UserHardData | null;
@@ -58,6 +59,12 @@ export default function CoachReportPanel({ hardData, decision, onAnalyze }: Coac
 
     const { activities } = useStravaActivities();
     const [syncingId, setSyncingId] = useState<number | null>(null);
+    const [isFtpModalOpen, setIsFtpModalOpen] = useState(false);
+
+    const handleSaveFtp = (ftp: number) => {
+        localStorage.setItem('user_ftp', ftp.toString());
+        window.dispatchEvent(new Event('user-ftp-update'));
+    };
 
     const handleSync = async (activity: StravaActivity) => {
         if (syncingId || loadingActivities) return;
@@ -163,21 +170,7 @@ export default function CoachReportPanel({ hardData, decision, onAnalyze }: Coac
             <div className="grid grid-cols-2 gap-4">
                 {/* FTP */}
                 <div
-                    onClick={() => {
-                        const currentFtp = hardData?.ftp || 200;
-                        const newFtp = window.prompt('請輸入新的 FTP (瓦數):', currentFtp.toString());
-
-                        // 安全修復 5: 加入數值有效性與範圍驗證 (50W - 600W)
-                        if (newFtp && !isNaN(Number(newFtp))) {
-                            const ftpNum = Number(newFtp);
-                            if (ftpNum < 50 || ftpNum > 600) {
-                                alert('請輸入合理的 FTP 數值 (50 - 600)');
-                                return;
-                            }
-                            localStorage.setItem('user_ftp', newFtp);
-                            window.dispatchEvent(new Event('user-ftp-update'));
-                        }
-                    }}
+                    onClick={() => setIsFtpModalOpen(true)}
                     className="bg-surface/50 border border-white/5 rounded-2xl p-4 relative group hover:border-primary/50 transition-all cursor-pointer hover:bg-surface hover:shadow-glass active:scale-[0.98]"
                     title="點擊修改 FTP"
                     aria-label="修改功能性閾值功率"
@@ -433,6 +426,13 @@ export default function CoachReportPanel({ hardData, decision, onAnalyze }: Coac
                     )}
                 </div>
             </div>
+
+            <FtpModal
+                isOpen={isFtpModalOpen}
+                onClose={() => setIsFtpModalOpen(false)}
+                currentFtp={hardData?.ftp || 200}
+                onSave={handleSaveFtp}
+            />
         </div>
     );
 }

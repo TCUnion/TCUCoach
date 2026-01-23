@@ -1,3 +1,4 @@
+from fastapi import APIRouter
 from app.api.endpoints import auth, strava_api, activities
 
 router = APIRouter()

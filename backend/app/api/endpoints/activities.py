@@ -16,7 +16,7 @@ class ActivityRO(BaseModel):
     average_watts: Optional[float] = None
     isSynced: bool = False
 
-@router.get("/db/activities", response_model=List[ActivityRO])
+@router.get("/activities", response_model=List[ActivityRO])
 async def get_db_activities(
     athlete_id: int = Query(..., description="The Strava Athlete ID to fetch activities for"),
     # In a fully secure system, we would get athlete_id from the verified session/token, not a query param.
@@ -71,7 +71,7 @@ async def get_db_activities(
         print(f"Error fetching activities: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/db/activities/latest")
+@router.get("/activities/latest")
 async def get_latest_activity(
     athlete_id: int = Query(..., description="The Strava Athlete ID"),
     authorization: str = Header(None)
