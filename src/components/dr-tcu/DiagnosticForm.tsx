@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { RefreshCw, CheckCircle2 } from 'lucide-react';
 import { UserSubjectiveData } from '../../types/coach';
 import { useStravaActivities, StravaActivitySummary } from '../../hooks/useStravaActivities';
 
